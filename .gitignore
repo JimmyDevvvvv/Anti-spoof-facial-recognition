@@ -1,0 +1,19 @@
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
+
+# Face recognition data
+training_data/
+models/
+attendance_logs/
+screenshots/
+
