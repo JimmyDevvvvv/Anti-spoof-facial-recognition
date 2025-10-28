@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import pickle
+import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -18,12 +19,11 @@ import cv2
 import numpy as np
 
 from .preprocessing import EnhancedFacePreprocessor as FacePreprocessor
-from .antispoofing import (
-    AntiSpoofingDetector, 
-    DetectionMode, 
-    LivenessLevel,
-    create_basic_detector,
-    create_high_security_detector
+from .final_anti_spoof import (
+    UltimateAntiSpoof,
+    SecurityLevel,
+    AntiSpoofResult,
+    AttackType
 )
 
 
@@ -55,7 +55,7 @@ class RecognitionResult:
     threshold: float
     quality_score: float
     lighting_metrics: LightingMetrics
-    liveness_result: Optional[object] = None  # Anti-spoofing result
+    liveness_result: Optional[AntiSpoofResult] = None  # Anti-spoofing result from UltimateAntiSpoof
     is_live: bool = True  # Liveness status
     
     def __str__(self) -> str:
@@ -106,6 +106,12 @@ class FaceRecognizer:
     ULTRA_STRICT_THRESHOLD = 100.0  # Allow OMAR's range through
     UNCERTAIN_RANGE = (100.0, 120.0)  # Higher uncertain range
     MAX_CONFIDENCE_THRESHOLD = 120.0  # Higher threshold
+    
+    # Blink verification constants (based on research) - LENIENT DEFAULTS
+    MIN_BLINK_INTERVAL = 0.5  # Minimum seconds between blinks (very lenient)
+    MAX_BLINK_INTERVAL = 20.0  # Maximum seconds without blink (very lenient)
+    REQUIRED_BLINKS_FOR_VERIFICATION = 1  # Just 1 blink needed (very lenient)
+    BLINK_VERIFICATION_WINDOW = 30.0  # Longer time window (30 seconds)
 
     def __init__(
         self,
@@ -118,9 +124,14 @@ class FaceRecognizer:
         enable_antispoofing: bool = False,
         antispoofing_mode: str = "basic",  # "basic", "high_security", "disabled"
         reject_on_spoof: bool = True,
+        enable_blink_verification: bool = False,  # Disabled by default (experimental)
+        min_blink_interval: float = 0.5,  # Very lenient - minimum seconds between blinks
+        max_blink_interval: float = 20.0,  # Very lenient - maximum seconds without blink
+        required_blinks: int = 1,  # Just need 1 blink
+        blink_window: float = 30.0,  # Longer time window (30 seconds)
     ) -> None:
         """
-        Initialize the LBPH Face Recognizer with optional anti-spoofing.
+        Initialize the LBPH Face Recognizer with optional anti-spoofing and blink verification.
         
         Args:
             radius: Radius for LBP calculation (1-3, default 1)
@@ -132,6 +143,11 @@ class FaceRecognizer:
             enable_antispoofing: Enable anti-spoofing detection
             antispoofing_mode: Anti-spoofing mode ("basic", "high_security", "disabled")
             reject_on_spoof: Whether to reject recognition on spoofing detection
+            enable_blink_verification: Enable temporal blink interval verification
+            min_blink_interval: Minimum seconds between blinks (default 1.5s)
+            max_blink_interval: Maximum seconds without blink (default 10.0s)
+            required_blinks: Minimum blinks to verify liveness (default 2)
+            blink_window: Time window to collect blinks in seconds (default 15.0s)
             
         Raises:
             ValueError: If parameters are out of valid ranges
@@ -147,6 +163,13 @@ class FaceRecognizer:
         self.enable_antispoofing = enable_antispoofing
         self.antispoofing_mode = antispoofing_mode
         self.reject_on_spoof = reject_on_spoof
+        
+        # Blink verification configuration
+        self.enable_blink_verification = enable_blink_verification
+        self.min_blink_interval = min_blink_interval
+        self.max_blink_interval = max_blink_interval
+        self.required_blinks = required_blinks
+        self.blink_window = blink_window
         
         # Create LBPH recognizer
         # Note: Don't pass threshold to LBPH - we handle thresholding after prediction
@@ -173,6 +196,13 @@ class FaceRecognizer:
         self._quality_history: List[float] = []
         self._label_history: List[int] = []
         self._last_stable_confidence: Optional[float] = None
+        
+        # Blink verification tracking
+        self._blink_timestamps: List[float] = []  # Timestamps of detected blinks
+        self._session_start_time: float = 0.0  # When recognition session started
+        self._last_blink_check_time: float = 0.0  # Last time we checked for blinks
+        self._blink_verified: bool = False  # Whether blinks have been verified
+        self._verification_in_progress: bool = False  # Whether we're actively verifying
 
     @staticmethod
     def _validate_parameters(
@@ -211,12 +241,12 @@ class FaceRecognizer:
             face_crop_margin=0.2  # Match training pipeline
         )
     
-    def _create_antispoofing_detector(self) -> Optional[AntiSpoofingDetector]:
+    def _create_antispoofing_detector(self) -> Optional[UltimateAntiSpoof]:
         """Create and configure the anti-spoofing detector."""
         if self.antispoofing_mode == "basic":
-            return create_basic_detector(strict_mode=False)
+            return UltimateAntiSpoof(level=SecurityLevel.BALANCED.value)
         elif self.antispoofing_mode == "high_security":
-            return create_high_security_detector(require_blink=False, require_motion=False)
+            return UltimateAntiSpoof(level=SecurityLevel.STRICT.value)
         else:
             return None
 
@@ -477,12 +507,40 @@ class FaceRecognizer:
         is_live = True
         
         if self.enable_antispoofing and self.antispoofing_detector is not None:
-            liveness_result = self.antispoofing_detector.detect(face_image)
-            is_live = liveness_result.is_live
+            try:
+                liveness_result = self.antispoofing_detector.check(face_image)
+                is_live = liveness_result.is_real
+                
+                # Try to extract blink detection from UltimateAntiSpoof - IMPROVED
+                if hasattr(liveness_result, 'metrics') and liveness_result.metrics is not None:
+                    # Check if blink score exists and is meaningful
+                    if hasattr(liveness_result.metrics, 'blink_score'):
+                        blink_score = liveness_result.metrics.blink_score
+                        # More lenient threshold - consider any blink indication
+                        if blink_score > 0.3:  # Lowered from 0.7 for better detection
+                            import time
+                            self._record_blink(time.time())
+                            if self.enable_blink_verification:
+                                print(f"  [Blink detected] Score: {blink_score:.2f}")
+                
+                if not is_live and self.reject_on_spoof:
+                    return self._create_spoof_result(liveness_result)
+            except Exception as e:
+                print(f"Warning: Anti-spoofing check failed: {e}")
+        
+        # Stage 1.5: Verify blink timing (advisory layer - warns but doesn't reject)
+        import time
+        current_time = time.time()
+        blink_warning = None
+        
+        if self.enable_blink_verification:
+            blink_valid, blink_reason = self._verify_blink_timing(current_time)
             
-            # Early rejection if spoofing detected and reject_on_spoof is True
-            if not is_live and self.reject_on_spoof:
-                return self._create_spoof_result(liveness_result)
+            if not blink_valid:
+                # Log warning but don't reject - blink detection is experimental
+                blink_warning = f"Blink verification warning: {blink_reason}"
+                print(f"  ⚠️  {blink_warning}")
+                # Continue with recognition instead of rejecting
         
         # Stage 2: Lighting normalization
         normalized_face = self._normalize_lighting(face_image)
@@ -507,7 +565,7 @@ class FaceRecognizer:
         if liveness_result and not is_live:
             # Reduce confidence for spoofed faces
             smoothed_confidence *= (1.0 - liveness_result.confidence)
-        elif liveness_result and liveness_result.liveness_level in [LivenessLevel.SUSPICIOUS, LivenessLevel.LIKELY_SPOOF]:
+        elif liveness_result and not liveness_result.is_real:
             # Slightly reduce confidence for suspicious faces
             smoothed_confidence *= 0.9
         
@@ -556,12 +614,12 @@ class FaceRecognizer:
             is_live=is_live
         )
     
-    def _create_spoof_result(self, liveness_result: object) -> RecognitionResult:
+    def _create_spoof_result(self, liveness_result: AntiSpoofResult) -> RecognitionResult:
         """Create a result object for spoofed faces."""
         return RecognitionResult(
             recognized=False,
             label=-1,
-            name='Spoofed',
+            name=f'Spoof: {liveness_result.attack_type.value}',
             confidence=float('inf'),
             raw_confidence=float('inf'),
             threshold=self.threshold,
@@ -1061,13 +1119,104 @@ class FaceRecognizer:
             return False
         
         return True
+    
+    def _verify_blink_timing(self, current_time: float) -> Tuple[bool, str]:
+        """
+        Verify that blinks occur within acceptable time intervals.
+        
+        LENIENT MODE: This is advisory only - warns but doesn't reject.
+        Blink detection is experimental and may have false positives.
+        
+        Args:
+            current_time: Current timestamp in seconds
+            
+        Returns:
+            Tuple of (is_valid, reason) where is_valid indicates if blink timing is acceptable
+        """
+        import time
+        
+        # Initialize session if needed
+        if self._session_start_time == 0.0:
+            self._session_start_time = current_time
+            self._last_blink_check_time = current_time
+            self._blink_verified = False
+            self._verification_in_progress = True
+        
+        session_duration = current_time - self._session_start_time
+        
+        # If we're using the UltimateAntiSpoof detector, it handles blinks internally
+        if self.antispoofing_detector is not None:
+            # Trust the main anti-spoofing system
+            return True, "Blink verification delegated to UltimateAntiSpoof"
+        
+        # LENIENT: If no blinks detected yet and still early, just return OK
+        if len(self._blink_timestamps) == 0 and session_duration < self.blink_window:
+            return True, f"Waiting for blinks... ({session_duration:.1f}s / {self.blink_window:.1f}s)"
+        
+        # Clean up old blink timestamps outside the verification window
+        self._blink_timestamps = [
+            ts for ts in self._blink_timestamps 
+            if current_time - ts <= self.blink_window
+        ]
+        
+        # Check if we're still in the verification window
+        if session_duration < self.blink_window:
+            # Still collecting blinks
+            if len(self._blink_timestamps) >= self.required_blinks:
+                # LENIENT: Only warn about very suspicious patterns, don't reject minor issues
+                for i in range(1, len(self._blink_timestamps)):
+                    interval = self._blink_timestamps[i] - self._blink_timestamps[i-1]
+                    
+                    # Only flag extremely suspicious patterns (very strict thresholds)
+                    if interval < 0.3:  # Impossibly fast (< 300ms)
+                        return False, f"Blinks impossibly fast ({interval:.1f}s) - likely video replay"
+                    
+                    # Don't check max interval - too unreliable
+                
+                self._blink_verified = True
+                return True, f"✓ Blink timing OK ({len(self._blink_timestamps)} blinks detected)"
+            else:
+                # Still collecting, not enough blinks yet - this is OK
+                return True, f"Collecting blinks ({len(self._blink_timestamps)}/{self.required_blinks}) - {session_duration:.1f}s elapsed"
+        else:
+            # Verification window expired - LENIENT: Don't fail, just note it
+            if not self._blink_verified:
+                if len(self._blink_timestamps) < self.required_blinks:
+                    # LENIENT: Just warn, don't reject
+                    return True, f"⚠️ Only {len(self._blink_timestamps)}/{self.required_blinks} blinks in {self.blink_window}s (advisory only)"
+            
+            return True, "✓ Verification complete" if self._blink_verified else "⚠️ Insufficient data (advisory only)"
+    
+    def _record_blink(self, current_time: float) -> None:
+        """
+        Record a detected blink with timestamp.
+        
+        Args:
+            current_time: Timestamp when blink was detected
+        """
+        self._blink_timestamps.append(current_time)
+        
+        # Keep only recent blinks within the verification window
+        self._blink_timestamps = [
+            ts for ts in self._blink_timestamps 
+            if current_time - ts <= self.blink_window
+        ]
+    
+    def reset_blink_verification(self) -> None:
+        """Reset blink verification state for a new session."""
+        self._blink_timestamps.clear()
+        self._session_start_time = 0.0
+        self._last_blink_check_time = 0.0
+        self._blink_verified = False
+        self._verification_in_progress = False
 
     def reset_confidence_history(self) -> None:
-        """Reset confidence smoothing history for a fresh start."""
+        """Reset confidence smoothing history and blink verification for a fresh start."""
         self._confidence_history.clear()
         self._quality_history.clear()
         self._label_history.clear()
         self._last_stable_confidence = None
+        self.reset_blink_verification()
 
     def save_model(
         self,
@@ -1297,6 +1446,58 @@ class FaceRecognizer:
         self.enable_antispoofing = False
         self.antispoofing_detector = None
     
+    def enable_blink_verification_detection(
+        self,
+        min_blink_interval: float = 0.5,  # Very lenient
+        max_blink_interval: float = 20.0,  # Very lenient
+        required_blinks: int = 1,  # Just need 1 blink
+        blink_window: float = 30.0  # Longer window
+    ) -> None:
+        """
+        Enable temporal blink verification for additional liveness detection.
+        
+        WARNING: This is an EXPERIMENTAL feature that may have false positives.
+        It runs in advisory mode - warns but doesn't reject recognition.
+        
+        Args:
+            min_blink_interval: Minimum seconds between blinks (default 0.5s - very lenient)
+            max_blink_interval: Maximum seconds without blink (default 20.0s - very lenient)
+            required_blinks: Minimum blinks to verify liveness (default 1 - very lenient)
+            blink_window: Time window to collect blinks in seconds (default 30.0s - longer)
+        """
+        self.enable_blink_verification = True
+        self.min_blink_interval = min_blink_interval
+        self.max_blink_interval = max_blink_interval
+        self.required_blinks = required_blinks
+        self.blink_window = blink_window
+        self.reset_blink_verification()
+        print(f"✓ Blink verification enabled (ADVISORY MODE)")
+        print(f"  Parameters: {required_blinks} blinks in {blink_window}s window")
+    
+    def disable_blink_verification_detection(self) -> None:
+        """Disable temporal blink verification."""
+        self.enable_blink_verification = False
+        self.reset_blink_verification()
+    
+    def get_blink_verification_info(self) -> Dict:
+        """
+        Get blink verification configuration and status.
+        
+        Returns:
+            Dictionary with blink verification settings and current status
+        """
+        return {
+            'enabled': self.enable_blink_verification,
+            'min_blink_interval': self.min_blink_interval,
+            'max_blink_interval': self.max_blink_interval,
+            'required_blinks': self.required_blinks,
+            'blink_window': self.blink_window,
+            'current_blinks': len(self._blink_timestamps),
+            'blink_verified': self._blink_verified,
+            'verification_in_progress': self._verification_in_progress,
+            'session_duration': time.time() - self._session_start_time if self._session_start_time > 0 else 0.0
+        }
+    
     def get_antispoofing_info(self) -> Dict:
         """
         Get anti-spoofing configuration information.
@@ -1308,15 +1509,18 @@ class FaceRecognizer:
             return {
                 'enabled': False,
                 'mode': 'disabled',
+                'security_level': 'disabled',
                 'reject_on_spoof': False
             }
         
-        detector_info = self.antispoofing_detector.get_detector_info()
         return {
             'enabled': True,
             'mode': self.antispoofing_mode,
-            'reject_on_spoof': self.reject_on_spoof,
-            'detector_info': detector_info
+            'detector_type': 'UltimateAntiSpoof',
+            'security_level': SecurityLevel.STRICT.value if self.antispoofing_mode == "high_security" 
+                            else SecurityLevel.BALANCED.value if self.antispoofing_mode == "basic"
+                            else "disabled",
+            'reject_on_spoof': self.reject_on_spoof
         }
 
     def __repr__(self) -> str:

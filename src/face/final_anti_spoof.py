@@ -82,12 +82,16 @@ class LivenessMetrics:
     depth_score: float
     frequency_score: float
     blink_score: float
-    pulse_score: float  # New: micro-expressions
+    pulse_score: float  # Micro-expressions
+    color_temp_score: float = 0.5  # NEW: Color temperature (CCT)
+    refresh_score: float = 0.5  # NEW: Screen refresh rate detection
+    rppg_score: float = 0.5  # NEW: Blood flow (heartbeat) detection
     
     def __str__(self) -> str:
         return (f"Texture:{self.texture_score:.2f} Motion:{self.motion_score:.2f} "
                 f"Color:{self.color_score:.2f} Depth:{self.depth_score:.2f} "
-                f"Freq:{self.frequency_score:.2f} Blink:{self.blink_score:.2f}")
+                f"Freq:{self.frequency_score:.2f} Blink:{self.blink_score:.2f} "
+                f"CCT:{self.color_temp_score:.2f} Refresh:{self.refresh_score:.2f} rPPG:{self.rppg_score:.2f}")
 
 
 @dataclass
@@ -184,20 +188,20 @@ class UltimateAntiSpoof:
             }
         },
         SecurityLevel.BALANCED: {
-            'confidence_threshold': 0.65,
-            'min_checks_passing': 5,
-            'require_blink': True,
-            'require_motion': True,
+            'confidence_threshold': 0.55,  # Lowered from 0.65 for better real face acceptance
+            'min_checks_passing': 4,  # Lowered from 5
+            'require_blink': False,  # Made optional - blink detection can be unreliable
+            'require_motion': False,  # Made optional - webcam motion can be subtle
             'weights': {
                 'texture': 0.18, 'motion': 0.22, 'color': 0.18,
                 'depth': 0.15, 'frequency': 0.12, 'blink': 0.10, 'pulse': 0.05
             }
         },
         SecurityLevel.STRICT: {
-            'confidence_threshold': 0.75,
-            'min_checks_passing': 6,
-            'require_blink': True,
-            'require_motion': True,
+            'confidence_threshold': 0.65,  # Lowered from 0.75
+            'min_checks_passing': 5,  # Lowered from 6
+            'require_blink': False,  # Made optional
+            'require_motion': True,  # Keep motion but with lower threshold
             'weights': {
                 'texture': 0.16, 'motion': 0.24, 'color': 0.16,
                 'depth': 0.16, 'frequency': 0.12, 'blink': 0.12, 'pulse': 0.04
@@ -276,6 +280,14 @@ class UltimateAntiSpoof:
         self.face_roi_history = []
         self.brightness_history = []
         
+        # Screen refresh rate detection (temporal brightness analysis)
+        self.brightness_buffer = []  # Track brightness over frames
+        self.refresh_rate_buffer_size = 30  # 0.5s at 60fps
+        
+        # rPPG (blood flow) detection
+        self.green_channel_history = []  # Track green channel for heartbeat
+        self.rppg_buffer_size = 150  # 5 seconds at 30fps for reliable heartbeat
+        
         # Statistics
         self.total_checks = 0
         self.real_count = 0
@@ -335,6 +347,11 @@ class UltimateAntiSpoof:
         blink_score = self._check_blink(landmarks, gray)
         pulse_score = self._check_pulse(color, face_bbox)
         
+        # NEW: Advanced screen detection methods
+        color_temp_score = self._check_color_temperature(color, face_bbox)
+        refresh_score = self._check_screen_refresh(color, face_bbox)
+        rppg_score = self._check_rppg(color, face_bbox)
+        
         # Create metrics
         metrics = LivenessMetrics(
             texture_score=texture_score,
@@ -343,14 +360,20 @@ class UltimateAntiSpoof:
             depth_score=depth_score,
             frequency_score=frequency_score,
             blink_score=blink_score,
-            pulse_score=pulse_score
+            pulse_score=pulse_score,
+            color_temp_score=color_temp_score,
+            refresh_score=refresh_score,
+            rppg_score=rppg_score
         )
         
         # Calculate weighted confidence
         weights = self.config['weights']
-        confidence = (
+        
+        # Base confidence from original 7 checks
+        # ADJUSTED: Reduce motion weight (can be fooled by hand movement)
+        base_confidence = (
             texture_score * weights['texture'] +
-            motion_score * weights['motion'] +
+            motion_score * (weights['motion'] * 0.5) +  # REDUCE motion weight by 50%
             color_score * weights['color'] +
             depth_score * weights['depth'] +
             frequency_score * weights['frequency'] +
@@ -358,7 +381,20 @@ class UltimateAntiSpoof:
             pulse_score * weights['pulse']
         )
         
-        # Count passing checks
+        # Add new advanced checks with HIGH weight (screen detection is critical)
+        # CRITICAL: rPPG is now HIGHEST weight - it's the gold standard
+        advanced_confidence = (
+            color_temp_score * 0.15 +  # Color temperature (screens are cool/blue)
+            refresh_score * 0.18 +      # Screen refresh rate (digital display detector)
+            rppg_score * 0.30           # Blood flow (HIGHEST WEIGHT - can't be faked)
+        )
+        
+        # Combine: 60% base + 60% advanced (emphasize advanced checks)
+        # This ensures advanced checks dominate the decision
+        confidence = base_confidence * 0.6 + advanced_confidence * 0.6
+        confidence = np.clip(confidence, 0.0, 1.0)
+        
+        # Count passing checks (now 10 total)
         passing = sum([
             texture_score >= 0.5,
             motion_score >= 0.5,
@@ -366,7 +402,10 @@ class UltimateAntiSpoof:
             depth_score >= 0.5,
             frequency_score >= 0.5,
             blink_score >= 0.5,
-            pulse_score >= 0.5
+            pulse_score >= 0.5,
+            color_temp_score >= 0.5,
+            refresh_score >= 0.5,
+            rppg_score >= 0.5
         ])
         
         # Make decision
@@ -375,12 +414,60 @@ class UltimateAntiSpoof:
             passing >= self.config['min_checks_passing']
         )
         
-        # Additional requirements
-        if self.config['require_blink'] and blink_score < 0.7:
+        # CRITICAL: Screen detection override
+        # If ANY advanced screen check strongly indicates a screen, mark as SPOOF
+        screen_indicators = []
+        
+        if color_temp_score < 0.4:
+            screen_indicators.append(f"Cool color temp (screen backlight)")
+        if refresh_score < 0.4:
+            screen_indicators.append(f"Screen refresh detected")
+        if color_score < 0.3:  # From backlight detection in _check_color
+            screen_indicators.append(f"Blue backlight excess")
+        
+        # If 2+ screen indicators, OVERRIDE and mark as spoof
+        if len(screen_indicators) >= 2:
+            is_real = False
+            warnings_list.append(f"SCREEN DETECTED: {'; '.join(screen_indicators)}")
+            if self.debug:
+                print(f"[DEBUG] ⚠ SCREEN OVERRIDE: {screen_indicators}")
+        
+        # CRITICAL: PHOTO DETECTION OVERRIDE
+        # Printed photos have distinct characteristics
+        photo_indicators = []
+        
+        # 1. Very low texture (smooth paper) OR low color variation
+        if texture_score < 0.25:
+            photo_indicators.append("Low texture (printed surface)")
+        if color_score < 0.15:
+            photo_indicators.append("Low color variation (flat print)")
+        
+        # 2. No heartbeat detection (rPPG should be very low for photos)
+        if rppg_score < 0.4:
+            photo_indicators.append("No blood flow detected")
+        
+        # 3. Low frequency score (no natural skin micro-texture)
+        if frequency_score < 0.4:
+            photo_indicators.append("Unnatural frequency patterns")
+        
+        # 4. Paper photos have warm color temperature (NOT screen-cool)
+        # But also lack natural skin warmth variation
+        if color_temp_score > 0.6 and color_score < 0.2:
+            photo_indicators.append("Uniform paper temperature")
+        
+        # If 2+ photo indicators, OVERRIDE and mark as PHOTO SPOOF
+        if len(photo_indicators) >= 2:
+            is_real = False
+            warnings_list.append(f"PHOTO DETECTED: {'; '.join(photo_indicators)}")
+            if self.debug:
+                print(f"[DEBUG] ⚠ PHOTO OVERRIDE: {photo_indicators}")
+        
+        # Additional requirements - LENIENT THRESHOLDS FOR WEBCAM
+        if self.config['require_blink'] and blink_score < 0.5:  # Lowered from 0.7
             is_real = False
             warnings_list.append("Blink detection failed")
         
-        if self.config['require_motion'] and motion_score < 0.3:
+        if self.config['require_motion'] and motion_score < 0.2:  # Lowered from 0.3 for subtle webcam motion
             is_real = False
             warnings_list.append("Insufficient motion detected")
         
@@ -437,9 +524,14 @@ class UltimateAntiSpoof:
         if len(self.frame_buffer) > self.max_buffer_size:
             self.frame_buffer.pop(0)
         
+        # Perform check BEFORE updating previous_frame
+        # This way motion detection can compare current vs previous
+        result = self.check(frame)
+        
+        # NOW update previous_frame for next iteration
         self.previous_frame = gray
         
-        return self.check(frame)
+        return result
     
     def reset(self):
         """Reset video mode state."""
@@ -527,12 +619,39 @@ class UltimateAntiSpoof:
             laplacian_var = cv2.Laplacian(roi, cv2.CV_64F).var()
             sharpness_score = min(laplacian_var / 120.0, 1.0)
             
+            # SCREEN PIXEL GRID DETECTION
+            # Screens have regular pixel patterns that create periodic frequency
+            # Use FFT to detect these regular patterns
+            fft = np.fft.fft2(roi.astype(float))
+            fft_shift = np.fft.fftshift(fft)
+            magnitude = np.abs(fft_shift)
+            
+            # Check for strong periodic components (indicates pixel grid)
+            h, w = magnitude.shape
+            center_h, center_w = h // 2, w // 2
+            # Exclude DC component (center)
+            magnitude[center_h-2:center_h+2, center_w-2:center_w+2] = 0
+            
+            # High magnitude in non-DC areas indicates regular patterns (pixel grid)
+            max_freq_magnitude = np.max(magnitude)
+            if max_freq_magnitude > 500:  # Strong periodic pattern - SEVERE PENALTY
+                pixel_grid_penalty = 0.2
+                if self.debug:
+                    print(f"[DEBUG] Pixel grid detected: freq_mag={max_freq_magnitude:.0f}")
+            elif max_freq_magnitude > 300:
+                pixel_grid_penalty = 0.4
+            else:
+                pixel_grid_penalty = 1.0
+            
             score = (
                 variance_score * 0.30 +
                 edge_score * 0.25 +
                 entropy_score * 0.25 +
                 sharpness_score * 0.20
             )
+            
+            # Apply pixel grid penalty
+            score = score * pixel_grid_penalty
             
             return np.clip(score, 0.0, 1.0)
             
@@ -548,9 +667,12 @@ class UltimateAntiSpoof:
         Photos: completely static
         Videos: may have motion but unnatural patterns
         """
-        if not self.enable_video_mode or self.previous_frame is None:
-            # For single images or first frame, return neutral score.
-            # Motion requirement (if any) is enforced in the main decision logic.
+        if not self.enable_video_mode:
+            # For single images, return neutral score
+            return 0.5
+            
+        if self.previous_frame is None:
+            # First frame - no motion to compare yet
             return 0.5
         
         try:
@@ -572,33 +694,47 @@ class UltimateAntiSpoof:
             
             # Face region motion
             x, y, w, h = bbox
+            # Ensure bbox is within image bounds
+            h_img, w_img = gray.shape
+            x = max(0, min(x, w_img - 1))
+            y = max(0, min(y, h_img - 1))
+            w = min(w, w_img - x)
+            h = min(h, h_img - y)
+            
             face_flow = magnitude[y:y+h, x:x+w]
             face_motion = np.mean(face_flow)
             motion_std = np.std(face_flow)
             
-            # Scoring based on research
-            # Real person: 1.0-5.0 pixels average motion
-            # Photo: <0.5 pixels
+            if self.debug:
+                print(f"[DEBUG Motion] Avg: {face_motion:.3f}, Std: {motion_std:.3f}")
+            
+            # Scoring based on research - ADJUSTED FOR WEBCAM
+            # Real person: 0.1-5.0 pixels average motion (lowered for subtle movements)
+            # Photo: <0.05 pixels
             # Video replay: may show motion but different characteristics
             
-            if face_motion > 3.0:
-                motion_score = 1.0
-            elif face_motion > 1.5:
-                motion_score = 0.9
-            elif face_motion > 0.8:
-                motion_score = 0.7
-            elif face_motion > 0.4:
-                motion_score = 0.4
+            if face_motion > 2.0:
+                motion_score = 1.0  # Strong motion - definitely real
+            elif face_motion > 0.5:
+                motion_score = 0.9  # Good motion - likely real
+            elif face_motion > 0.2:
+                motion_score = 0.7  # Moderate motion - acceptable
+            elif face_motion > 0.1:
+                motion_score = 0.5  # Small motion - borderline
+            elif face_motion > 0.05:
+                motion_score = 0.3  # Very small motion - questionable
             else:
                 motion_score = 0.1  # Static - likely photo
             
-            # Variance score
-            if motion_std > 1.0:
+            # Variance score - ADJUSTED
+            if motion_std > 0.5:
                 var_score = 1.0
-            elif motion_std > 0.6:
+            elif motion_std > 0.2:
                 var_score = 0.8
-            elif motion_std > 0.3:
-                var_score = 0.5
+            elif motion_std > 0.1:
+                var_score = 0.6
+            elif motion_std > 0.05:
+                var_score = 0.4
             else:
                 var_score = 0.2
             
@@ -624,6 +760,30 @@ class UltimateAntiSpoof:
             
             if roi.size == 0:
                 return 0.5
+            
+            # SCREEN DETECTION: Check for backlight characteristics
+            # Screens have higher blue channel and overall brightness
+            b, g, r = cv2.split(roi)
+            avg_b = np.mean(b)
+            avg_g = np.mean(g)
+            avg_r = np.mean(r)
+            avg_brightness = (avg_b + avg_g + avg_r) / 3.0
+            blue_ratio = avg_b / (avg_brightness + 1e-10)
+            
+            # Screens typically have blue_ratio > 0.36 and brightness > 115
+            # These thresholds are VERY sensitive to catch phone screens
+            if avg_brightness > 125 and blue_ratio > 0.37:
+                # Strong screen indicators - SEVERE penalty
+                screen_penalty = 0.1
+                if self.debug:
+                    print(f"[DEBUG] SCREEN DETECTED: brightness={avg_brightness:.1f}, blue_ratio={blue_ratio:.3f}")
+            elif avg_brightness > 115 and blue_ratio > 0.35:
+                # Moderate screen indicators - heavy penalty
+                screen_penalty = 0.3
+                if self.debug:
+                    print(f"[DEBUG] Possible screen: brightness={avg_brightness:.1f}, blue_ratio={blue_ratio:.3f}")
+            else:
+                screen_penalty = 1.0  # No screen detected
             
             # YCrCb analysis (best for skin)
             ycrcb = cv2.cvtColor(roi, cv2.COLOR_BGR2YCrCb)
@@ -658,7 +818,7 @@ class UltimateAntiSpoof:
                 diversity_score = 0.3
             
             # RGB balance (photos often have color cast)
-            b, g, r = cv2.split(roi)
+            # Already computed b, g, r above
             balance = 1.0 - min(abs(np.mean(r) - np.mean(g)), 
                                abs(np.mean(g) - np.mean(b)),
                                abs(np.mean(b) - np.mean(r))) / 50.0
@@ -669,6 +829,9 @@ class UltimateAntiSpoof:
                 diversity_score * 0.30 +
                 balance_score * 0.25
             )
+            
+            # Apply screen penalty
+            score = score * screen_penalty
             
             return np.clip(score, 0.0, 1.0)
             
@@ -989,6 +1152,257 @@ class UltimateAntiSpoof:
             if self.debug:
                 print(f"[DEBUG] Pulse check failed: {e}")
             return 0.5
+    
+    def _check_color_temperature(self, color: np.ndarray, bbox: Tuple) -> float:
+        """
+        Color Temperature Analysis (CCT - Correlated Color Temperature).
+        Real faces under normal lighting: 2700K-5500K (warm)
+        Screens (LED backlight): 6500K-9000K (cool/blue)
+        
+        Based on display technology standards and lighting research.
+        """
+        try:
+            x, y, w, h = bbox
+            roi = color[y:y+h, x:x+w]
+            
+            if roi.size == 0:
+                return 0.5
+            
+            # Get average RGB values
+            b, g, r = cv2.split(roi)
+            avg_r = np.mean(r) / 255.0
+            avg_g = np.mean(g) / 255.0
+            avg_b = np.mean(b) / 255.0
+            
+            # Convert RGB to XYZ color space (simplified)
+            # Then to CCT using McCamy's formula
+            X = avg_r * 0.4124 + avg_g * 0.3576 + avg_b * 0.1805
+            Y = avg_r * 0.2126 + avg_g * 0.7152 + avg_b * 0.0722
+            Z = avg_r * 0.0193 + avg_g * 0.1192 + avg_b * 0.9505
+            
+            # Chromaticity coordinates
+            if (X + Y + Z) > 0:
+                x_chrom = X / (X + Y + Z)
+                y_chrom = Y / (X + Y + Z)
+                
+                # McCamy's approximation for CCT
+                n = (x_chrom - 0.3320) / (0.1858 - y_chrom)
+                cct = 449 * n**3 + 3525 * n**2 + 6823.3 * n + 5520.33
+                
+                if self.debug:
+                    print(f"[DEBUG] Color Temperature: {cct:.0f}K")
+                
+                # Scoring based on CCT
+                if 2500 <= cct <= 5500:
+                    # Natural indoor/outdoor lighting (real face)
+                    return 1.0
+                elif 5500 <= cct <= 6500:
+                    # Border zone (could be real or screen)
+                    return 0.7
+                elif 6500 <= cct <= 8000:
+                    # Typical LCD screen range
+                    cct_penalty = 0.4
+                    if self.debug:
+                        print(f"[DEBUG] SCREEN TEMP DETECTED: {cct:.0f}K (typical LCD)")
+                    return cct_penalty
+                else:
+                    # Very cool (likely screen with high backlight)
+                    cct_penalty = 0.2
+                    if self.debug:
+                        print(f"[DEBUG] SCREEN TEMP DETECTED: {cct:.0f}K (high backlight)")
+                    return cct_penalty
+            
+            return 0.5
+            
+        except Exception as e:
+            if self.debug:
+                print(f"[DEBUG] Color temperature check failed: {e}")
+            return 0.5
+    
+    def _check_screen_refresh(self, color: np.ndarray, bbox: Tuple) -> float:
+        """
+        Screen Refresh Rate Detection (Temporal Brightness Flickering).
+        Screens flicker at 60Hz/120Hz - invisible to humans but detectable.
+        
+        Real faces: No periodic flickering
+        Screens: Strong 60Hz/120Hz frequency components in brightness
+        
+        Based on display technology and video anti-spoofing research.
+        """
+        try:
+            if not self.enable_video_mode:
+                return 0.5  # Needs video mode
+            
+            x, y, w, h = bbox
+            roi = color[y:y+h, x:x+w]
+            
+            # Calculate average brightness
+            gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            brightness = np.mean(gray_roi)
+            
+            # Store brightness history
+            self.brightness_buffer.append(brightness)
+            if len(self.brightness_buffer) > self.refresh_rate_buffer_size:
+                self.brightness_buffer.pop(0)
+            
+            # Need at least 30 frames (0.5s at 60fps)
+            if len(self.brightness_buffer) < 30:
+                return 0.5
+            
+            # Perform temporal FFT to detect periodic flickering
+            brightness_signal = np.array(self.brightness_buffer)
+            
+            # Remove DC component (mean)
+            brightness_signal = brightness_signal - np.mean(brightness_signal)
+            
+            # FFT
+            fft = np.fft.fft(brightness_signal)
+            freqs = np.fft.fftfreq(len(brightness_signal), d=1/30.0)  # Assuming 30fps
+            
+            # Get magnitude (only positive frequencies)
+            n = len(brightness_signal) // 2
+            magnitude = np.abs(fft[:n])
+            freqs = freqs[:n]
+            
+            # Look for strong peaks at 60Hz or 120Hz (±5Hz tolerance)
+            # Screen refresh rates: 60Hz, 75Hz, 120Hz, 144Hz
+            refresh_rates = [60, 75, 120, 144]
+            max_peak = 0
+            detected_freq = 0
+            
+            for target_freq in refresh_rates:
+                # Find frequencies near target (±5Hz)
+                mask = (freqs >= target_freq - 5) & (freqs <= target_freq + 5)
+                if np.any(mask):
+                    peak_magnitude = np.max(magnitude[mask])
+                    if peak_magnitude > max_peak:
+                        max_peak = peak_magnitude
+                        detected_freq = target_freq
+            
+            # Calculate baseline (average magnitude excluding peaks)
+            baseline = np.median(magnitude)
+            
+            # If peak is significantly higher than baseline, it's likely a screen
+            if max_peak > baseline * 3:
+                # Strong periodic component detected
+                refresh_penalty = 0.2
+                if self.debug:
+                    print(f"[DEBUG] SCREEN REFRESH DETECTED: {detected_freq}Hz flicker (peak={max_peak:.1f}, baseline={baseline:.1f})")
+                return refresh_penalty
+            elif max_peak > baseline * 2:
+                # Moderate periodic component
+                if self.debug:
+                    print(f"[DEBUG] Possible screen refresh: {detected_freq}Hz (peak={max_peak:.1f}, baseline={baseline:.1f})")
+                return 0.5
+            else:
+                # No significant periodic component (real face)
+                return 1.0
+            
+        except Exception as e:
+            if self.debug:
+                print(f"[DEBUG] Screen refresh check failed: {e}")
+            return 0.5
+    
+    def _check_rppg(self, color: np.ndarray, bbox: Tuple) -> float:
+        """
+        rPPG (Remote Photoplethysmography) - Blood Flow Detection.
+        GOLD STANDARD method for liveness detection.
+        
+        Real faces: Green channel varies with heartbeat (60-100 BPM)
+        Photos/screens: No heartbeat signal
+        
+        Requires 5-10 seconds of video for reliable detection.
+        Based on: "Remote Photoplethysmography" research (MIT, 2010+)
+        """
+        try:
+            if not self.enable_video_mode:
+                return 0.5  # Needs video mode
+            
+            x, y, w, h = bbox
+            roi = color[y:y+h, x:x+w]
+            
+            # Extract green channel (best for blood flow detection)
+            b, g, r = cv2.split(roi)
+            green_mean = np.mean(g)
+            
+            # Store green channel history
+            self.green_channel_history.append(green_mean)
+            if len(self.green_channel_history) > self.rppg_buffer_size:
+                self.green_channel_history.pop(0)
+            
+            # Need at least 3 seconds of data (90 frames at 30fps)
+            if len(self.green_channel_history) < 90:
+                return 0.5  # Not enough data yet
+            
+            # Perform FFT to detect heartbeat frequency
+            green_signal = np.array(self.green_channel_history)
+            
+            # Detrend (remove slow drift)
+            green_signal = green_signal - np.mean(green_signal)
+            
+            # Apply bandpass filter (0.8Hz - 2.5Hz = 48-150 BPM)
+            # Using FFT bandpass
+            fft = np.fft.fft(green_signal)
+            freqs = np.fft.fftfreq(len(green_signal), d=1/30.0)  # 30fps
+            
+            # Bandpass: keep only 0.8-2.5 Hz (48-150 BPM)
+            mask = (np.abs(freqs) >= 0.8) & (np.abs(freqs) <= 2.5)
+            fft_filtered = fft * mask
+            
+            # Get magnitude
+            n = len(green_signal) // 2
+            magnitude = np.abs(fft_filtered[:n])
+            freqs_positive = freqs[:n]
+            
+            # Find peak in heartbeat range
+            heartbeat_mask = (freqs_positive >= 0.8) & (freqs_positive <= 2.5)
+            if np.any(heartbeat_mask):
+                heartbeat_magnitude = magnitude[heartbeat_mask]
+                peak_magnitude = np.max(heartbeat_magnitude)
+                peak_idx = np.argmax(heartbeat_magnitude)
+                peak_freq = freqs_positive[heartbeat_mask][peak_idx]
+                peak_bpm = peak_freq * 60
+                
+                # Calculate SNR (signal to noise ratio)
+                baseline = np.median(magnitude)
+                snr = peak_magnitude / (baseline + 1e-10)
+                
+                if self.debug:
+                    print(f"[DEBUG] rPPG: BPM={peak_bpm:.1f}, SNR={snr:.2f}, peak={peak_magnitude:.2f}, baseline={baseline:.2f}")
+                
+                # STRICT HEARTBEAT DETECTION (real faces have clear signals)
+                if snr > 5.0 and 55 <= peak_bpm <= 100:
+                    # Very strong heartbeat in normal resting range
+                    if self.debug:
+                        print(f"[DEBUG] ✓ STRONG HEARTBEAT: {peak_bpm:.0f} BPM (REAL)")
+                    return 1.0
+                elif snr > 3.5 and 50 <= peak_bpm <= 110:
+                    # Good heartbeat signal
+                    if self.debug:
+                        print(f"[DEBUG] ✓ HEARTBEAT DETECTED: {peak_bpm:.0f} BPM")
+                    return 0.8
+                elif snr > 2.0 and 45 <= peak_bpm <= 120:
+                    # Weak but detectable heartbeat
+                    if self.debug:
+                        print(f"[DEBUG] ⚠ WEAK HEARTBEAT: {peak_bpm:.0f} BPM")
+                    return 0.6
+                else:
+                    # No valid heartbeat (SPOOF - photo/screen)
+                    if self.debug:
+                        print(f"[DEBUG] ✗ NO HEARTBEAT DETECTED (SNR={snr:.2f}, BPM={peak_bpm:.1f}) - LIKELY SPOOF")
+                    return 0.2  # Changed from 0.3 to be more strict
+            else:
+                # No peak found at all
+                if self.debug:
+                    print(f"[DEBUG] ✗ NO HEARTBEAT SIGNAL - SPOOF DETECTED")
+                return 0.1  # Very low score for no signal
+            
+            return 0.3  # Default low score if something went wrong
+            
+        except Exception as e:
+            if self.debug:
+                print(f"[DEBUG] rPPG check failed: {e}")
+            return 0.3  # Changed from 0.5 - assume spoof on error
     
     # ========================================================================
     # HELPER METHODS

@@ -17,3 +17,10 @@ models/
 attendance_logs/
 screenshots/
 
+# Datasets
+att_faces_dataset/
+combined_dataset/
+final_omar_dataset/
+unified_dataset/
+*.db
+

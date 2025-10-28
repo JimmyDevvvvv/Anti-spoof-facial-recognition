@@ -41,13 +41,13 @@ import numpy as np
 # Import our modules (adjust paths as needed)
 try:
     from src.face.recognizer import FaceRecognizer
-    from src.face.antispoofing_integration import (
-        PerfectAntiSpoof,
-        SecureFaceRecognition,
+    from src.face.final_anti_spoof import (
+        UltimateAntiSpoof,
         SecurityLevel,
         AttackType,
         AntiSpoofResult
     )
+    from generate_report import TestReportGenerator
 except ImportError as e:
     print(f"ERROR: Could not import required modules: {e}")
     print("Make sure you're running from the project root directory.")
@@ -210,16 +210,19 @@ class VisualOverlay:
         motion: float,
         color: float,
         depth: float,
-        frequency: float
+        frequency: float,
+        color_temp: float = 0.5,
+        refresh: float = 0.5,
+        rppg: float = 0.5
     ):
         """Draw anti-spoofing status panel."""
         h, w = frame.shape[:2]
-        panel_x = w - 250
+        panel_x = w - 280
         panel_y = 60
         
-        # Semi-transparent background
+        # Semi-transparent background (taller to fit new metrics)
         overlay = frame.copy()
-        cv2.rectangle(overlay, (panel_x, panel_y), (w - 10, panel_y + 170), COLOR_BLACK, -1)
+        cv2.rectangle(overlay, (panel_x, panel_y), (w - 10, panel_y + 230), COLOR_BLACK, -1)
         cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
         
         # Status
@@ -232,14 +235,17 @@ class VisualOverlay:
             cv2.putText(frame, attack_type, (panel_x + 10, panel_y + 45),
                        FONT, 0.4, COLOR_ORANGE, 1)
         
-        # Individual scores
+        # Individual scores (now 8 total: 5 original + 3 new)
         y_offset = panel_y + 70
         scores = [
             ("Texture", texture),
             ("Motion", motion),
             ("Color", color),
             ("Depth", depth),
-            ("Frequency", frequency)
+            ("Frequency", frequency),
+            ("ColorTemp", color_temp),  # NEW
+            ("Refresh", refresh),       # NEW
+            ("rPPG", rppg)              # NEW
         ]
         
         for label, score in scores:
@@ -348,7 +354,7 @@ class VisualOverlay:
         """Draw control hints."""
         h, w = frame.shape[:2]
         panel_x = w - 260
-        panel_y = h - 120
+        panel_y = h - 135  # Increased from 120 to fit new control
         
         # Semi-transparent background
         overlay = frame.copy()
@@ -365,6 +371,7 @@ class VisualOverlay:
             "1-4: Security levels",
             "D: Toggle debug",
             "S: Toggle stats",
+            "G: Generate report",
             "R: Reset stats",
             "Q/ESC: Quit"
         ]
@@ -413,8 +420,12 @@ class LiveTestSystem:
         self.security_level = level_mapping.get(initial_level, SecurityLevel.BALANCED)
         self.current_level = initial_level
         
-        # Initialize anti-spoofing detector
-        self.antispoofing = PerfectAntiSpoof(level=self.security_level, enable_motion=True, require_blink=True)
+        # Initialize anti-spoofing detector with new UltimateAntiSpoof system
+        self.antispoofing = UltimateAntiSpoof(
+            level=self.security_level.value,  # Convert enum to string value
+            enable_video_mode=True,
+            debug=False
+        )
         
         # Initialize face recognition
         print("[2/4] Initializing face recognizer...")
@@ -430,7 +441,12 @@ class LiveTestSystem:
                 if hasattr(cv2, 'face'):
                     print(f"    LBPH available: {hasattr(cv2.face, 'LBPHFaceRecognizer_create')}")
                 
-                self.recognizer = FaceRecognizer(threshold=50.0)
+                self.recognizer = FaceRecognizer(
+                    threshold=50.0,
+                    enable_antispoofing=True,  # Enable integrated anti-spoofing
+                    antispoofing_mode="basic",  # Use basic mode (balanced)
+                    reject_on_spoof=True  # Reject spoofed faces
+                )
                 print("  FaceRecognizer created successfully")
                 print("  Loading model...")
                 self.recognizer.load_model(model_path)
@@ -470,6 +486,10 @@ class LiveTestSystem:
         self.perf_tracker = PerformanceTracker()
         self.overlay = VisualOverlay()
         
+        # Initialize report generator
+        self.report_generator = TestReportGenerator()
+        self.enable_reporting = True
+        
         # Display settings
         self.show_statistics = True
         self.show_debug = True
@@ -481,7 +501,8 @@ class LiveTestSystem:
         self.last_face_bbox = None
         
         print("\n[OK] System ready!")
-        print("\nStarting live test... Press Q or ESC to quit.\n")
+        print("\nStarting live test... Press Q or ESC to quit.")
+        print("Press 'G' to generate report at any time.")
         print("=" * 70 + "\n")
     
     def process_frame(self, frame: np.ndarray) -> np.ndarray:
@@ -518,15 +539,49 @@ class LiveTestSystem:
             # Track anti-spoofing result
             self.perf_tracker.add_antispoofing_result(antispoofing_result.is_real)
             
-            # Recognition (only if real and enabled)
-            if self.recognition_enabled and antispoofing_result.is_real and self.recognizer:
-                try:
-                    recognition_result = self.recognizer.predict_with_name(face_roi)
-                    self.last_recognition_result = recognition_result
-                    self.perf_tracker.add_recognition_result(recognition_result.recognized)
-                except Exception as e:
-                    print(f"Recognition error: {e}")
+            # Record to report generator
+            if self.enable_reporting:
+                recognition_name = None
+                recognition_conf = None
+                
+                # Recognition (only if real and enabled)
+                if self.recognition_enabled and antispoofing_result.is_real and self.recognizer:
+                    try:
+                        recognition_result = self.recognizer.predict_with_name(face_roi)
+                        self.last_recognition_result = recognition_result
+                        self.perf_tracker.add_recognition_result(recognition_result.recognized)
+                        if recognition_result.recognized:
+                            recognition_name = recognition_result.name
+                            recognition_conf = recognition_result.confidence
+                    except Exception as e:
+                        print(f"Recognition error: {e}")
+                        self.last_recognition_result = None
+                else:
                     self.last_recognition_result = None
+                
+                # Record frame data to report
+                self.report_generator.record_frame(
+                    is_real=antispoofing_result.is_real,
+                    confidence=antispoofing_result.confidence,
+                    attack_type=antispoofing_result.attack_type.value,
+                    metrics={
+                        'texture_score': antispoofing_result.metrics.texture_score,
+                        'motion_score': antispoofing_result.metrics.motion_score,
+                        'color_score': antispoofing_result.metrics.color_score,
+                        'depth_score': antispoofing_result.metrics.depth_score,
+                        'frequency_score': antispoofing_result.metrics.frequency_score,
+                        'blink_score': antispoofing_result.metrics.blink_score,
+                        'pulse_score': antispoofing_result.metrics.pulse_score,
+                        'color_temp_score': antispoofing_result.metrics.color_temp_score,
+                        'refresh_score': antispoofing_result.metrics.refresh_score,
+                        'rppg_score': antispoofing_result.metrics.rppg_score,
+                    },
+                    warnings=antispoofing_result.warnings,
+                    recognition_name=recognition_name,
+                    recognition_confidence=recognition_conf,
+                    fps=self.perf_tracker.fps,
+                    processing_time=0  # Will be calculated below
+                )
             
             # Draw face box (only if we have results)
             if self.last_antispoofing_result:
@@ -563,15 +618,20 @@ class LiveTestSystem:
         
         # Anti-spoofing panel
         if self.show_debug and self.last_antispoofing_result:
+            # Extract metrics from the new UltimateAntiSpoof result structure
+            metrics = self.last_antispoofing_result.metrics
             self.overlay.draw_status_panel(
                 frame,
                 self.last_antispoofing_result.is_real,
                 self.last_antispoofing_result.attack_type.value,
-                self.last_antispoofing_result.texture_score,
-                self.last_antispoofing_result.motion_score,
-                self.last_antispoofing_result.color_score,
-                self.last_antispoofing_result.depth_score,
-                self.last_antispoofing_result.frequency_score
+                metrics.texture_score,
+                metrics.motion_score,
+                metrics.color_score,
+                metrics.depth_score,
+                metrics.frequency_score,
+                metrics.color_temp_score,  # NEW
+                metrics.refresh_score,     # NEW
+                metrics.rppg_score         # NEW
             )
         
         # Recognition panel - always show when recognition is enabled
@@ -607,7 +667,7 @@ class LiveTestSystem:
         return frame
     
     def change_security_level(self, level: str):
-        """Change security level."""
+        """Change security level by recreating the anti-spoofing detector."""
         self.current_level = level
         # Map security levels to SecurityLevel enum
         level_mapping = {
@@ -619,8 +679,13 @@ class LiveTestSystem:
         new_level = level_mapping.get(level, SecurityLevel.BALANCED)
         self.security_level = new_level
         
+        # Recreate anti-spoofing detector with new level
         if self.antispoofing:
-            self.antispoofing.set_level(new_level)
+            self.antispoofing = UltimateAntiSpoof(
+                level=new_level.value,  # Convert enum to string
+                enable_video_mode=True,
+                debug=False
+            )
         
         print(f"[OK] Security level changed to: {level.upper()}")
     
@@ -671,6 +736,15 @@ class LiveTestSystem:
                 elif key == ord('r'):
                     self.perf_tracker.reset()
                     print("[OK] Statistics reset")
+                elif key == ord('g'):
+                    # Generate report
+                    print("\n[*] Generating test report...")
+                    timestamp = time.strftime("%Y%m%d_%H%M%S")
+                    report_name = f"live_test_{timestamp}"
+                    self.report_generator.generate_report(
+                        report_name=report_name,
+                        include_visualizations=True
+                    )
                 elif key == ord(' '):
                     # Take screenshot
                     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -679,6 +753,7 @@ class LiveTestSystem:
                     screenshots_dir.mkdir(exist_ok=True)
                     filename = screenshots_dir / f"screenshot_{timestamp}.jpg"
                     cv2.imwrite(str(filename), frame)
+                    print(f"[OK] Screenshot saved: {filename}")
                     print(f"[OK] Screenshot saved: {filename}")
         
         finally:
@@ -703,6 +778,20 @@ class LiveTestSystem:
         print(f"Average processing time: {stats['avg_time']:.1f}ms")
         print(f"Average FPS: {stats['fps']:.1f}")
         print("=" * 70)
+        
+        # Auto-generate final report
+        if self.enable_reporting and self.report_generator.session_data['total_frames'] > 0:
+            print("\n[*] Auto-generating final test report...")
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            report_name = f"session_{timestamp}"
+            try:
+                self.report_generator.generate_report(
+                    report_name=report_name,
+                    include_visualizations=True
+                )
+            except Exception as e:
+                print(f"[!] Report generation failed: {e}")
+                print("    (This is non-critical, session data can be reviewed from stats above)")
 
 
 # ============================================================================
