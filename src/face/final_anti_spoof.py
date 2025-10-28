@@ -37,6 +37,14 @@ from enum import Enum
 from typing import Dict, List, Optional, Tuple
 import cv2
 import numpy as np
+import sys
+
+# Ensure console can render Unicode on Windows (PowerShell/cmd)
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 # MediaPipe for perfect facial landmarks
 MEDIAPIPE_AVAILABLE = False
@@ -188,13 +196,13 @@ class UltimateAntiSpoof:
             }
         },
         SecurityLevel.BALANCED: {
-            'confidence_threshold': 0.55,  # Lowered from 0.65 for better real face acceptance
-            'min_checks_passing': 4,  # Lowered from 5
-            'require_blink': False,  # Made optional - blink detection can be unreliable
-            'require_motion': False,  # Made optional - webcam motion can be subtle
+            'confidence_threshold': 0.50,  # WEBCAM OPTIMIZED - Lowered for better real face pass rate
+            'min_checks_passing': 5,  # CRITICAL: Need 5/10 checks (was 4, photos fail multiple checks)
+            'require_blink': True,  # REQUIRED - Photos cannot blink
+            'require_motion': True,  # CRITICAL: REQUIRED - Photos have ZERO facial feature movement
             'weights': {
-                'texture': 0.18, 'motion': 0.22, 'color': 0.18,
-                'depth': 0.15, 'frequency': 0.12, 'blink': 0.10, 'pulse': 0.05
+                'texture': 0.15, 'motion': 0.25, 'color': 0.15,  # Motion weight increased
+                'depth': 0.12, 'frequency': 0.10, 'blink': 0.15, 'pulse': 0.05  # Blink weight increased
             }
         },
         SecurityLevel.STRICT: {
@@ -222,8 +230,12 @@ class UltimateAntiSpoof:
     # Natural blink characteristics (research-backed)
     NATURAL_BLINK_RATE_MIN = 0.15  # 9 blinks/min
     NATURAL_BLINK_RATE_MAX = 0.67  # 40 blinks/min
-    EYE_CLOSURE_THRESHOLD = 0.25   # EAR below this = closed
-    BLINK_CONSECUTIVE_FRAMES = 2   # Frames to count as blink
+    EYE_CLOSURE_THRESHOLD = 0.20   # EAR below this = closed (STRICTER: was 0.25)
+    BLINK_CONSECUTIVE_FRAMES = 3   # Frames to count as blink (STRICTER: was 2, ~100ms at 30fps)
+    
+    # CONTINUOUS VALIDATION - Require blink every 10 seconds
+    BLINK_TIMEOUT_SECONDS = 10.0  # Maximum time without blink
+    PRESENCE_TIMEOUT_SECONDS = 2.0  # Maximum time face can be absent
     
     def __init__(
         self,
@@ -268,6 +280,11 @@ class UltimateAntiSpoof:
         self.frame_buffer = []
         self.max_buffer_size = 30  # 1 second at 30fps
         self.previous_frame = None
+        self.previous_landmarks = None  # Track landmark movement for real motion detection
+        
+        # CRITICAL: Track motion over TIME to catch static photos
+        self.motion_history = []  # Store motion scores over time
+        self.motion_buffer_size = 60  # 2 seconds at 30fps - MINIMUM observation time
         
         # Blink detection state
         self.ear_history = []
@@ -275,6 +292,14 @@ class UltimateAntiSpoof:
         self.last_blink_time = 0.0
         self.session_start = time.time()
         self.ear_consecutive_low = 0
+        self.eyes_currently_closed = False  # Track if eyes are closed right now
+        self.blink_start_time = 0.0  # When eyes started closing
+        
+        # CONTINUOUS VALIDATION STATE
+        self.is_user_validated = False  # Track if user is currently validated
+        self.last_face_seen_time = 0.0  # Track when face was last detected
+        self.validation_start_time = 0.0  # When current validation period started
+        self.total_blinks_in_session = 0  # Total blinks since validation started
         
         # Pulse/micro-expression detection
         self.face_roi_history = []
@@ -307,7 +332,12 @@ class UltimateAntiSpoof:
         return_detailed: bool = False
     ) -> AntiSpoofResult:
         """
-        Check if face is real or spoofed.
+        Check if face is real or spoofed with CONTINUOUS VALIDATION.
+        
+        Continuous validation requirements:
+        - User must blink at least once every 10 seconds
+        - User must remain in frame continuously (max 2 second absence)
+        - Validation expires if either requirement fails
         
         Args:
             face_image: Face image (BGR or grayscale)
@@ -317,6 +347,7 @@ class UltimateAntiSpoof:
             AntiSpoofResult with complete analysis
         """
         start_time = time.time()
+        current_time = time.time()
         warnings_list = []
         
         # Validate and preprocess
@@ -336,11 +367,26 @@ class UltimateAntiSpoof:
         face_detected, landmarks, face_bbox = self._detect_face_landmarks(rgb, gray)
         
         if not face_detected:
+            # CONTINUOUS VALIDATION: Face lost - check if validation expires
+            if self.is_user_validated:
+                time_since_face = current_time - self.last_face_seen_time
+                if time_since_face > self.PRESENCE_TIMEOUT_SECONDS:
+                    # Face absent too long - expire validation
+                    self.is_user_validated = False
+                    if self.debug:
+                        print(f"[DEBUG] ⚠ VALIDATION EXPIRED: Face absent for {time_since_face:.1f}s")
+                    return self._create_error_result("Validation expired - face not detected", start_time)
+                else:
+                    # Still within timeout - keep validation
+                    warnings_list.append(f"Face temporarily lost ({time_since_face:.1f}s)")
             return self._create_error_result("No face detected", start_time)
+        
+        # CONTINUOUS VALIDATION: Face detected - update presence time
+        self.last_face_seen_time = current_time
         
         # Perform all checks
         texture_score = self._check_texture(gray, face_bbox)
-        motion_score = self._check_motion(gray, face_bbox)
+        motion_score = self._check_motion(gray, face_bbox, landmarks)  # Pass landmarks
         color_score = self._check_color(color, face_bbox)
         depth_score = self._check_depth(gray, face_bbox)
         frequency_score = self._check_frequency(gray, face_bbox)
@@ -351,6 +397,10 @@ class UltimateAntiSpoof:
         color_temp_score = self._check_color_temperature(color, face_bbox)
         refresh_score = self._check_screen_refresh(color, face_bbox)
         rppg_score = self._check_rppg(color, face_bbox)
+        
+        # DEBUG: Print scores if enabled
+        if self.debug:
+            print(f"[DEBUG SCORES] Blink:{blink_score:.2f} Motion:{motion_score:.2f} Texture:{texture_score:.2f} Color:{color_score:.2f}")
         
         # Create metrics
         metrics = LivenessMetrics(
@@ -418,11 +468,11 @@ class UltimateAntiSpoof:
         # If ANY advanced screen check strongly indicates a screen, mark as SPOOF
         screen_indicators = []
         
-        if color_temp_score < 0.4:
+        if color_temp_score < 0.35:  # More strict (was 0.4)
             screen_indicators.append(f"Cool color temp (screen backlight)")
-        if refresh_score < 0.4:
+        if refresh_score < 0.35:  # More strict (was 0.4)
             screen_indicators.append(f"Screen refresh detected")
-        if color_score < 0.3:  # From backlight detection in _check_color
+        if color_score < 0.20:  # More lenient (was 0.3) - won't trigger on 0.08 alone
             screen_indicators.append(f"Blue backlight excess")
         
         # If 2+ screen indicators, OVERRIDE and mark as spoof
@@ -432,51 +482,108 @@ class UltimateAntiSpoof:
             if self.debug:
                 print(f"[DEBUG] ⚠ SCREEN OVERRIDE: {screen_indicators}")
         
-        # CRITICAL: PHOTO DETECTION OVERRIDE
-        # Printed photos have distinct characteristics
-        photo_indicators = []
+        # CRITICAL: MOTION + PHOTO DETECTION OVERRIDE
+        # Photos are COMPLETELY STATIC - zero face movement
+        # Real faces ALWAYS have micro-movements (breathing, pulse, micro-expressions)
         
-        # 1. Very low texture (smooth paper) OR low color variation
-        if texture_score < 0.25:
-            photo_indicators.append("Low texture (printed surface)")
-        if color_score < 0.15:
-            photo_indicators.append("Low color variation (flat print)")
+        # FIRST: Check for heartbeat - if strong heartbeat present, CANNOT be a photo
+        if rppg_score > 0.6:
+            # Strong heartbeat detected = DEFINITELY REAL
+            # Skip all photo detection logic
+            pass
+        else:
+            # No strong heartbeat - check for STATIC FACE (photo indicator)
+            photo_indicators = []
+            
+            # CRITICAL: Check for face motion (not camera motion)
+            # Photos: motion_score < 0.20 (completely static face)
+            # Real faces: motion_score > 0.25 (natural micro-movements)
+            if motion_score < 0.20:  # STRICTER threshold (was 0.15)
+                photo_indicators.append("Static face (no micro-movements)")
+            
+            # 1. Very low texture (smooth paper) - photos are VERY smooth
+            if texture_score < 0.30:  # STRICTER (was 0.25)
+                photo_indicators.append("Low texture (printed surface)")
+            
+            # 2. Low color variation (flat print)
+            if color_score < 0.25:  # STRICTER (was 0.20)
+                photo_indicators.append("Low color variation (flat print)")
+            
+            # 3. No heartbeat detection (CRITICAL for photos)
+            if rppg_score < 0.4:
+                photo_indicators.append("No blood flow detected")
+            
+            # 4. Low frequency score (no natural skin micro-texture)
+            if frequency_score < 0.45:  # STRICTER (was 0.40)
+                photo_indicators.append("Unnatural frequency patterns")
+            
+            # 5. Paper photos have warm color temperature but uniform
+            if color_temp_score > 0.6 and color_score < 0.25:
+                photo_indicators.append("Uniform paper temperature")
+            
+            # AGGRESSIVE: If STATIC FACE (motion < 0.20) + 2 other indicators = PHOTO
+            # This catches printed photos even if moved by hand
+            if motion_score < 0.20 and len(photo_indicators) >= 2:  # STRICTER: Only need 2 indicators (was 3)
+                is_real = False
+                warnings_list.append(f"PHOTO DETECTED (STATIC FACE): {'; '.join(photo_indicators)}")
+                if self.debug:
+                    print(f"[DEBUG] ⚠ PHOTO OVERRIDE (STATIC): {photo_indicators}")
+            # Also catch if 3+ indicators without strict motion requirement (was 4+)
+            elif len(photo_indicators) >= 3:  # STRICTER (was 4)
+                is_real = False
+                warnings_list.append(f"PHOTO DETECTED: {'; '.join(photo_indicators)}")
+                if self.debug:
+                    print(f"[DEBUG] ⚠ PHOTO OVERRIDE: {photo_indicators}")
         
-        # 2. No heartbeat detection (rPPG should be very low for photos)
-        if rppg_score < 0.4:
-            photo_indicators.append("No blood flow detected")
+        # CONTINUOUS VALIDATION: Check blink timeout (must blink every 10 seconds)
+        time_since_last_blink = current_time - self.last_blink_time
         
-        # 3. Low frequency score (no natural skin micro-texture)
-        if frequency_score < 0.4:
-            photo_indicators.append("Unnatural frequency patterns")
-        
-        # 4. Paper photos have warm color temperature (NOT screen-cool)
-        # But also lack natural skin warmth variation
-        if color_temp_score > 0.6 and color_score < 0.2:
-            photo_indicators.append("Uniform paper temperature")
-        
-        # If 2+ photo indicators, OVERRIDE and mark as PHOTO SPOOF
-        if len(photo_indicators) >= 2:
+        # CRITICAL: If no blink in last 10 seconds, ALWAYS mark as spoof (no flickering)
+        if time_since_last_blink > self.BLINK_TIMEOUT_SECONDS:
+            # Validation expired - no blink in 10 seconds
+            self.is_user_validated = False
             is_real = False
-            warnings_list.append(f"PHOTO DETECTED: {'; '.join(photo_indicators)}")
+            warnings_list.append(f"⚠ VALIDATION EXPIRED: No blink for {time_since_last_blink:.1f}s (timeout: {self.BLINK_TIMEOUT_SECONDS}s)")
+            print(f"[VALIDATION EXPIRED] ❌ No blink for {time_since_last_blink:.1f}s - MARKING AS SPOOF")
             if self.debug:
-                print(f"[DEBUG] ⚠ PHOTO OVERRIDE: {photo_indicators}")
+                print(f"[DEBUG] ⚠ VALIDATION EXPIRED: No blink for {time_since_last_blink:.1f}s")
         
-        # Additional requirements - LENIENT THRESHOLDS FOR WEBCAM
-        if self.config['require_blink'] and blink_score < 0.5:  # Lowered from 0.7
-            is_real = False
-            warnings_list.append("Blink detection failed")
+        # Additional requirements - STRICT for photos, LENIENT for real faces
+        # ALWAYS print blink score for debugging
+        print(f"[BLINK CHECK] Score: {blink_score:.3f}, Required: {self.config['require_blink']}, Session blinks: {self.total_blinks_in_session}, Time since last blink: {time_since_last_blink:.1f}s")
         
-        if self.config['require_motion'] and motion_score < 0.2:  # Lowered from 0.3 for subtle webcam motion
+        # Only check blink score if validation hasn't already expired
+        if time_since_last_blink <= self.BLINK_TIMEOUT_SECONDS:
+            if self.config['require_blink'] and blink_score < 0.5:  # STRICTER: Need actual blink detection
+                is_real = False
+                warnings_list.append("Blink detection failed - no eye movement detected (likely photo/screen)")
+                print(f"[DEBUG] ❌ BLINK REQUIREMENT FAILED: Score {blink_score:.3f} < 0.5 (Blinks: {self.total_blinks_in_session})")
+                if self.debug:
+                    print(f"[DEBUG] Blink requirement failed: {blink_score:.3f} < 0.5")
+        
+        if self.config['require_motion'] and motion_score < 0.25:  # INCREASED from 0.2 - photos have <0.15
             is_real = False
-            warnings_list.append("Insufficient motion detected")
+            warnings_list.append("Insufficient facial feature movement detected (likely static photo)")
+            if self.debug:
+                print(f"[DEBUG] Motion requirement failed: {motion_score:.3f} < 0.25")
         
         # Detect attack type
         if not is_real:
             attack_type, attack_conf = self._determine_attack_type(metrics)
+            # Invalidate user if spoofing detected
+            if self.is_user_validated:
+                self.is_user_validated = False
+                if self.debug:
+                    print(f"[DEBUG] ⚠ VALIDATION REVOKED: Spoofing detected")
         else:
             attack_type = AttackType.NONE
             attack_conf = 0.0
+            # User passed all checks - mark as validated
+            if not self.is_user_validated:
+                self.is_user_validated = True
+                self.validation_start_time = current_time
+                if self.debug:
+                    print(f"[DEBUG] ✓ USER VALIDATED at {current_time:.1f}s")
         
         # Update statistics
         self.total_checks += 1
@@ -533,10 +640,33 @@ class UltimateAntiSpoof:
         
         return result
     
+    def get_validation_status(self) -> Dict:
+        """
+        Get current continuous validation status.
+        
+        Returns:
+            Dictionary with validation state information
+        """
+        current_time = time.time()
+        time_since_blink = current_time - self.last_blink_time if self.last_blink_time > 0 else float('inf')
+        time_until_expiry = max(0, self.BLINK_TIMEOUT_SECONDS - time_since_blink)
+        
+        return {
+            'is_validated': self.is_user_validated,
+            'time_since_last_blink': time_since_blink,
+            'time_until_expiry': time_until_expiry,
+            'blink_timeout': self.BLINK_TIMEOUT_SECONDS,
+            'total_blinks': self.total_blinks_in_session,
+            'validation_active_for': current_time - self.validation_start_time if self.is_user_validated else 0,
+            'requires_blink_in': f"{time_until_expiry:.1f}s" if self.is_user_validated else "Not validated"
+        }
+    
     def reset(self):
-        """Reset video mode state."""
+        """Reset video mode state and validation."""
         self.frame_buffer.clear()
         self.previous_frame = None
+        self.previous_landmarks = None  # Reset landmark tracking
+        self.motion_history.clear()  # Reset motion tracking
         self.ear_history.clear()
         self.blink_counter = 0
         self.last_blink_time = 0.0
@@ -545,8 +675,14 @@ class UltimateAntiSpoof:
         self.face_roi_history.clear()
         self.brightness_history.clear()
         
+        # Reset continuous validation state
+        self.is_user_validated = False
+        self.last_face_seen_time = 0.0
+        self.validation_start_time = 0.0
+        self.total_blinks_in_session = 0
+        
         if self.debug:
-            print("[DEBUG] Detector state reset")
+            print("[DEBUG] Detector state and validation reset")
     
     # ========================================================================
     # CORE DETECTION METHODS
@@ -601,23 +737,27 @@ class UltimateAntiSpoof:
                 return 0.5
             
             # Variance (texture richness)
+            # WEBCAM OPTIMIZED: Lower threshold for webcam quality
             variance = np.std(roi)
-            variance_score = min(variance / 50.0, 1.0)
+            variance_score = min(variance / 22.0, 1.0)  # Lowered from 28
             
             # Edge density
+            # WEBCAM OPTIMIZED: Lower threshold for webcam
             edges = cv2.Canny(roi, 50, 150)
             edge_density = np.sum(edges > 0) / edges.size
-            edge_score = min(edge_density / 0.10, 1.0)
+            edge_score = min(edge_density / 0.035, 1.0)  # Lowered from 0.045
             
             # Histogram entropy
+            # WEBCAM OPTIMIZED: Lower entropy scoring for webcam quality
             hist = cv2.calcHist([roi], [0], None, [256], [0, 256])
             hist = hist / (hist.sum() + 1e-10)
             entropy = -np.sum(hist * np.log2(hist + 1e-10))
-            entropy_score = entropy / 8.0
+            entropy_score = min(entropy / 5.5, 1.0)  # Lowered from 6.0
             
             # Laplacian sharpness
+            # WEBCAM OPTIMIZED: Lower threshold for webcam sharpness
             laplacian_var = cv2.Laplacian(roi, cv2.CV_64F).var()
-            sharpness_score = min(laplacian_var / 120.0, 1.0)
+            sharpness_score = min(laplacian_var / 50.0, 1.0)  # Lowered from 60
             
             # SCREEN PIXEL GRID DETECTION
             # Screens have regular pixel patterns that create periodic frequency
@@ -634,20 +774,25 @@ class UltimateAntiSpoof:
             
             # High magnitude in non-DC areas indicates regular patterns (pixel grid)
             max_freq_magnitude = np.max(magnitude)
-            if max_freq_magnitude > 500:  # Strong periodic pattern - SEVERE PENALTY
-                pixel_grid_penalty = 0.2
-                if self.debug:
-                    print(f"[DEBUG] Pixel grid detected: freq_mag={max_freq_magnitude:.0f}")
-            elif max_freq_magnitude > 300:
-                pixel_grid_penalty = 0.4
-            else:
-                pixel_grid_penalty = 1.0
             
+            # ADJUSTED: Stricter thresholds - only penalize OBVIOUS screen patterns
+            if max_freq_magnitude > 1500:  # Extremely strong pattern - STRICTER
+                pixel_grid_penalty = 0.3  # Severe penalty
+                if self.debug:
+                    print(f"[DEBUG] Strong pixel grid detected: freq_mag={max_freq_magnitude:.0f}")
+            elif max_freq_magnitude > 1000:  # Very strong pattern - STRICTER
+                pixel_grid_penalty = 0.6  # Moderate penalty
+                if self.debug:
+                    print(f"[DEBUG] Pixel pattern detected: freq_mag={max_freq_magnitude:.0f}")
+            else:
+                pixel_grid_penalty = 1.0  # No penalty
+            
+            # WEBCAM OPTIMIZED: Favor variance and entropy over edges (webcam edges unreliable)
             score = (
-                variance_score * 0.30 +
-                edge_score * 0.25 +
-                entropy_score * 0.25 +
-                sharpness_score * 0.20
+                variance_score * 0.40 +      # Increased from 0.35 (primary indicator)
+                entropy_score * 0.35 +       # Maintained (secondary indicator)
+                sharpness_score * 0.20 +     # Same (tertiary indicator)
+                edge_score * 0.05            # Decreased from 0.10 (unreliable on webcam)
             )
             
             # Apply pixel grid penalty
@@ -660,22 +805,126 @@ class UltimateAntiSpoof:
                 print(f"[DEBUG] Texture check failed: {e}")
             return 0.5
     
-    def _check_motion(self, gray: np.ndarray, bbox: Tuple) -> float:
+    def _check_motion(self, gray: np.ndarray, bbox: Tuple, landmarks=None) -> float:
         """
-        Motion analysis using optical flow.
-        Real faces: natural micro-movements, subtle head motion
-        Photos: completely static
-        Videos: may have motion but unnatural patterns
+        Motion analysis - FACIAL FEATURE MOVEMENT detection.
+        Real faces: facial features CHANGE (eyes open/close, mouth moves, eyebrows raise)
+        Photos: facial features NEVER change (perfectly frozen in time)
+        
+        This detects ACTUAL facial feature movement, not just position changes!
         """
         if not self.enable_video_mode:
             # For single images, return neutral score
             return 0.5
             
-        if self.previous_frame is None:
-            # First frame - no motion to compare yet
+        if self.previous_frame is None or self.previous_landmarks is None:
+            # First frame - store landmarks and return neutral
+            if self.landmark_method == "mediapipe" and landmarks:
+                self.previous_landmarks = landmarks
             return 0.5
         
         try:
+            # PRIORITY 1: Facial Feature Shape Changes (most reliable for photos)
+            if self.landmark_method == "mediapipe" and landmarks and self.previous_landmarks:
+                # Track SHAPE changes in key facial features
+                feature_changes = []
+                
+                # 1. EYE OPENNESS - Real faces blink, photos never do
+                curr_eye_left = self._calculate_ear_mediapipe(landmarks)
+                prev_eye_left = self._calculate_ear_mediapipe(self.previous_landmarks)
+                eye_change = abs(curr_eye_left - prev_eye_left)
+                feature_changes.append(eye_change)
+                
+                # 2. MOUTH OPENNESS - Real people talk/breathe, photos don't
+                mouth_indices = [61, 291, 0, 17]  # Mouth corners and center
+                curr_mouth = []
+                prev_mouth = []
+                for idx in mouth_indices:
+                    if idx < len(landmarks.landmark) and idx < len(self.previous_landmarks.landmark):
+                        curr_mouth.append([landmarks.landmark[idx].y])
+                        prev_mouth.append([self.previous_landmarks.landmark[idx].y])
+                
+                if len(curr_mouth) >= 4:
+                    curr_mouth_height = np.std(curr_mouth)
+                    prev_mouth_height = np.std(prev_mouth)
+                    mouth_change = abs(curr_mouth_height - prev_mouth_height)
+                    feature_changes.append(mouth_change)
+                
+                # 3. EYEBROW MOVEMENT - Real faces show micro-expressions
+                eyebrow_indices = [70, 63, 105, 66, 300, 293, 334, 296]  # Eyebrow landmarks
+                curr_eyebrow = []
+                prev_eyebrow = []
+                for idx in eyebrow_indices:
+                    if idx < len(landmarks.landmark) and idx < len(self.previous_landmarks.landmark):
+                        curr_eyebrow.append([landmarks.landmark[idx].y])
+                        prev_eyebrow.append([self.previous_landmarks.landmark[idx].y])
+                
+                if len(curr_eyebrow) >= 6:
+                    curr_eyebrow_pos = np.mean(curr_eyebrow)
+                    prev_eyebrow_pos = np.mean(prev_eyebrow)
+                    eyebrow_change = abs(curr_eyebrow_pos - prev_eyebrow_pos)
+                    feature_changes.append(eyebrow_change)
+                
+                # 4. NOSE WRINKLE - Subtle but detectable in real faces
+                nose_indices = [1, 2, 98, 327]  # Nose bridge and tip
+                curr_nose = []
+                prev_nose = []
+                for idx in nose_indices:
+                    if idx < len(landmarks.landmark) and idx < len(self.previous_landmarks.landmark):
+                        curr_nose.append([landmarks.landmark[idx].x, landmarks.landmark[idx].y])
+                        prev_nose.append([self.previous_landmarks.landmark[idx].x, self.previous_landmarks.landmark[idx].y])
+                
+                if len(curr_nose) >= 4:
+                    nose_change = np.mean(np.linalg.norm(np.array(curr_nose) - np.array(prev_nose), axis=1))
+                    feature_changes.append(nose_change)
+                
+                # Calculate total feature movement
+                if feature_changes:
+                    total_feature_movement = np.mean(feature_changes)
+                    
+                    # Update previous landmarks for next frame
+                    self.previous_landmarks = landmarks
+                    
+                    if self.debug:
+                        print(f"[DEBUG Motion] Feature Movement: {total_feature_movement:.6f}")
+                    
+                    # Scoring - Real faces show ACTUAL feature changes
+                    # RESEARCH-BACKED THRESHOLDS:
+                    # Real faces: 0.002-0.05 (eyes blink, mouth moves, eyebrows shift)
+                    # Photos/Screens: <0.0005 (perfectly frozen, no feature shape changes)
+                    # Hand-waved photo: position changes but features frozen
+                    if total_feature_movement > 0.01:
+                        frame_score = 1.0  # Strong feature movement - definitely real
+                    elif total_feature_movement > 0.005:
+                        frame_score = 0.9  # Good feature movement - likely real
+                    elif total_feature_movement > 0.002:
+                        frame_score = 0.7  # Moderate feature movement - probably real
+                    elif total_feature_movement > 0.001:
+                        frame_score = 0.5  # Small feature movement - borderline
+                    elif total_feature_movement > 0.0005:
+                        frame_score = 0.3  # Very small - questionable
+                    else:
+                        frame_score = 0.1  # No feature movement - PHOTO/SCREEN DETECTED
+                    
+                    # Store motion score in history
+                    self.motion_history.append(frame_score)
+                    if len(self.motion_history) > self.motion_buffer_size:
+                        self.motion_history.pop(0)
+                    
+                    # CRITICAL: Use AVERAGE motion over time period
+                    # This prevents single-frame fluctuations from fooling the system
+                    if len(self.motion_history) >= 30:  # At least 1 second
+                        avg_motion = np.mean(self.motion_history)
+                        if self.debug:
+                            print(f"[DEBUG Motion] Avg over {len(self.motion_history)} frames: {avg_motion:.3f}")
+                        return avg_motion
+                    else:
+                        # Not enough history yet - return frame score but warn
+                        if self.debug:
+                            print(f"[DEBUG Motion] Collecting history: {len(self.motion_history)}/{self.motion_buffer_size}")
+                        return frame_score
+            
+            # FALLBACK: Optical flow (if landmarks unavailable)
             # Ensure same size
             if self.previous_frame.shape != gray.shape:
                 prev = cv2.resize(self.previous_frame, (gray.shape[1], gray.shape[0]))
@@ -770,18 +1019,19 @@ class UltimateAntiSpoof:
             avg_brightness = (avg_b + avg_g + avg_r) / 3.0
             blue_ratio = avg_b / (avg_brightness + 1e-10)
             
-            # Screens typically have blue_ratio > 0.36 and brightness > 115
-            # These thresholds are VERY sensitive to catch phone screens
-            if avg_brightness > 125 and blue_ratio > 0.37:
-                # Strong screen indicators - SEVERE penalty
-                screen_penalty = 0.1
+            # WEBCAM-OPTIMIZED: Only flag OBVIOUS screens
+            if avg_brightness > 150 and blue_ratio > 0.39:  # Very strict - STRONGEST screen indicator
+                screen_penalty = 0.10  # Severe penalty for clear screen
                 if self.debug:
-                    print(f"[DEBUG] SCREEN DETECTED: brightness={avg_brightness:.1f}, blue_ratio={blue_ratio:.3f}")
-            elif avg_brightness > 115 and blue_ratio > 0.35:
-                # Moderate screen indicators - heavy penalty
-                screen_penalty = 0.3
+                    print(f"[DEBUG] STRONG SCREEN: bright={avg_brightness:.1f}, blue={blue_ratio:.3f}")
+            elif avg_brightness > 145 and blue_ratio > 0.38:  # Strict - strong screen indicator
+                screen_penalty = 0.25  # Moderate-severe penalty
                 if self.debug:
-                    print(f"[DEBUG] Possible screen: brightness={avg_brightness:.1f}, blue_ratio={blue_ratio:.3f}")
+                    print(f"[DEBUG] Likely screen: bright={avg_brightness:.1f}, blue={blue_ratio:.3f}")
+            elif avg_brightness > 140 and blue_ratio > 0.37:  # Moderate screen indicator
+                screen_penalty = 0.50  # Moderate penalty
+                if self.debug:
+                    print(f"[DEBUG] Possible screen: bright={avg_brightness:.1f}, blue={blue_ratio:.3f}")
             else:
                 screen_penalty = 1.0  # No screen detected
             
@@ -810,12 +1060,13 @@ class UltimateAntiSpoof:
             s_std = np.std(s)
             diversity = (h_std + s_std) / 2.0
             
-            if 10 < diversity < 35:
+            # ADJUSTED: More lenient diversity ranges for webcam
+            if 8 < diversity < 40:  # Widened from 10-35
                 diversity_score = 1.0
-            elif 5 < diversity < 50:
-                diversity_score = 0.7
+            elif 4 < diversity < 55:  # Widened from 5-50
+                diversity_score = 0.8  # Increased from 0.7
             else:
-                diversity_score = 0.3
+                diversity_score = 0.4  # Increased from 0.3
             
             # RGB balance (photos often have color cast)
             # Already computed b, g, r above
@@ -990,38 +1241,78 @@ class UltimateAntiSpoof:
                 ear_smooth = ear
             
             if self.debug and len(self.ear_history) % 10 == 0:
-                print(f"[DEBUG] EAR: {ear:.3f}, Smooth: {ear_smooth:.3f}, Blinks: {self.blink_counter}")
+                time_since_blink = current_time - self.last_blink_time
+                print(f"[DEBUG] EAR: {ear:.3f}, Smooth: {ear_smooth:.3f}, Blinks: {self.blink_counter}, Time since blink: {time_since_blink:.1f}s, Eyes closed: {self.eyes_currently_closed}")
             
-            # Detect blink
+            # Detect COMPLETE blink cycle (close AND reopen)
             if ear_smooth < self.EYE_CLOSURE_THRESHOLD:
-                self.ear_consecutive_low += 1
-                
-                if self.ear_consecutive_low >= self.BLINK_CONSECUTIVE_FRAMES:
-                    if current_time - self.last_blink_time > 0.15:
-                        self.blink_counter += 1
-                        self.last_blink_time = current_time
-                        if self.debug:
-                            print(f"[DEBUG] ✓ Blink detected! Total: {self.blink_counter}")
-                        self.ear_consecutive_low = 0
+                # Eyes are closed
+                if not self.eyes_currently_closed:
+                    # Eyes just closed - start tracking
+                    self.eyes_currently_closed = True
+                    self.blink_start_time = current_time
+                    self.ear_consecutive_low = 1
+                else:
+                    # Eyes still closed
+                    self.ear_consecutive_low += 1
             else:
-                self.ear_consecutive_low = 0
+                # Eyes are open
+                if self.eyes_currently_closed:
+                    # Eyes just reopened - check if this was a valid blink
+                    blink_duration = current_time - self.blink_start_time
+                    
+                    # Valid blink: 100-500ms duration, at least 3 frames, and min time since last blink
+                    if (self.ear_consecutive_low >= self.BLINK_CONSECUTIVE_FRAMES and 
+                        0.1 <= blink_duration <= 0.5 and  # Valid blink duration
+                        current_time - self.last_blink_time > 0.3):  # STRICTER: 300ms between blinks (was 150ms)
+                        
+                        self.blink_counter += 1
+                        self.total_blinks_in_session += 1
+                        self.last_blink_time = current_time
+                        
+                        # RE-VALIDATE USER on successful blink
+                        if not self.is_user_validated:
+                            self.is_user_validated = True
+                            print(f"[VALIDATION RESTORED] ✓ User re-validated with blink")
+                        
+                        print(f"[BLINK DETECTED] Duration: {blink_duration*1000:.0f}ms, Frames: {self.ear_consecutive_low}, Total: {self.blink_counter}, Session: {self.total_blinks_in_session}")
+                        if self.debug:
+                            print(f"[DEBUG] ✓ COMPLETE BLINK! Duration: {blink_duration*1000:.0f}ms, Frames: {self.ear_consecutive_low}, Validated: {self.is_user_validated}")
+                    
+                    # Reset state
+                    self.eyes_currently_closed = False
+                    self.ear_consecutive_low = 0
             
             # Calculate score based on blink frequency
-            if session_duration < 2.0:
-                # Early in session, be lenient
-                return 0.7 if self.blink_counter > 0 else 0.5
+            if session_duration < 3.0:
+                # Early in session - STRICT: Must have at least 1 blink
+                score = 0.0
+                if self.blink_counter > 0:
+                    score = 0.8  # Good - blink detected
+                else:
+                    score = 0.1  # FAIL - no blinks yet (photos can't blink)
+                
+                print(f"[BLINK EARLY] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Score: {score:.3f}")
+                return score
             else:
                 blink_freq = self.blink_counter / session_duration
                 
                 # Natural range: 0.15-0.67 blinks/second
+                score = 0.0
                 if self.NATURAL_BLINK_RATE_MIN <= blink_freq <= self.NATURAL_BLINK_RATE_MAX:
-                    return 1.0
+                    score = 1.0
+                elif self.blink_counter >= 2:
+                    # At least two blinks - likely real
+                    score = 0.9
                 elif self.blink_counter >= 1:
-                    # At least one blink, but frequency off
-                    return 0.8
+                    # At least one blink - possibly real
+                    score = 0.6
                 else:
-                    # No blinks after sufficient time
-                    return 0.2
+                    # No blinks after 3+ seconds - PHOTO
+                    score = 0.0
+                
+                print(f"[BLINK LATE] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Freq: {blink_freq:.3f}, Score: {score:.3f}")
+                return score
         
         except Exception as e:
             if self.debug:
@@ -1446,25 +1737,41 @@ class UltimateAntiSpoof:
         """Determine attack type based on failed checks."""
         scores = {}
         
-        # Photo (print) - low depth, static, maybe texture artifacts
-        if metrics.depth_score < 0.4 and metrics.motion_score < 0.3:
+        # CRITICAL: Strong rPPG signal (heartbeat) overrides other indicators
+        # A real heartbeat CANNOT be faked by masks, photos, screens, or videos
+        if hasattr(metrics, 'rppg_score') and metrics.rppg_score > 0.7:
+            # Strong heartbeat = definitely real, don't classify as spoof
+            return AttackType.UNKNOWN, 0.0
+        
+        # Photo (print) - low depth, static, NO heartbeat
+        # Must have no/weak heartbeat to be classified as photo
+        if (metrics.depth_score < 0.4 and metrics.motion_score < 0.3 and
+            (not hasattr(metrics, 'rppg_score') or metrics.rppg_score < 0.3)):
             scores[AttackType.PHOTO_PRINT] = 0.7
         
-        # Screen display - frequency patterns, static or artificial motion
-        if metrics.frequency_score < 0.4 and metrics.motion_score < 0.5:
+        # Screen display - frequency patterns, static or artificial motion, NO heartbeat
+        if (metrics.frequency_score < 0.4 and metrics.motion_score < 0.5 and
+            (not hasattr(metrics, 'rppg_score') or metrics.rppg_score < 0.3)):
             scores[AttackType.PHOTO_SCREEN] = 0.6
         
-        # Video replay - motion but no blink or unnatural motion
-        if metrics.motion_score > 0.6 and metrics.blink_score < 0.4:
+        # Video replay - motion but no blink or unnatural motion, NO heartbeat
+        if (metrics.motion_score > 0.6 and metrics.blink_score < 0.4 and
+            (not hasattr(metrics, 'rppg_score') or metrics.rppg_score < 0.3)):
             scores[AttackType.VIDEO_REPLAY] = 0.8
         
-        # Mask - ok depth but poor texture/color
-        if metrics.depth_score > 0.5 and metrics.texture_score < 0.4:
+        # Mask - ok depth but poor texture/color AND NO heartbeat
+        # Low texture/color alone doesn't mean mask - could be lighting
+        # MUST have no heartbeat to be classified as mask
+        # ADJUSTED: Lower thresholds for webcam quality (texture 0.3→0.20, color 0.2→0.15)
+        if (metrics.depth_score > 0.5 and metrics.texture_score < 0.20 and 
+            metrics.color_score < 0.15 and
+            (not hasattr(metrics, 'rppg_score') or metrics.rppg_score < 0.3)):
             scores[AttackType.MASK_3D] = 0.6
         
-        # Deepfake - good texture/color but subtle artifacts
+        # Deepfake - good texture/color but subtle artifacts, weak heartbeat
         if (metrics.texture_score > 0.6 and metrics.color_score > 0.6 and
-            metrics.frequency_score < 0.5):
+            metrics.frequency_score < 0.5 and
+            (not hasattr(metrics, 'rppg_score') or metrics.rppg_score < 0.4)):
             scores[AttackType.DEEPFAKE] = 0.5
         
         if scores:

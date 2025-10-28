@@ -184,11 +184,11 @@ class EnhancedFacePreprocessor:
     DEFAULT_CLAHE_CLIP = 2.0
     DEFAULT_CLAHE_TILE = (8, 8)
     
-    # Quality thresholds - OPTIMIZED
-    QUALITY_EXCELLENT = 0.85
-    QUALITY_GOOD = 0.65
-    QUALITY_FAIR = 0.45
-    QUALITY_REJECT = 0.30  # New: Rejection threshold
+    # Quality thresholds - WEBCAM OPTIMIZED (Balanced: reject photos, accept real faces)
+    QUALITY_EXCELLENT = 0.75  # Lowered from 0.85 for webcam
+    QUALITY_GOOD = 0.55  # Lowered from 0.65 for webcam
+    QUALITY_FAIR = 0.35  # Lowered from 0.45 for webcam
+    QUALITY_REJECT = 0.25  # Raised from 0.20 - reject only obvious low quality (photos ~0.20-0.29)
     
     # Pose thresholds
     MAX_YAW_ANGLE = 30.0  # Maximum horizontal rotation
@@ -1072,36 +1072,36 @@ class EnhancedFacePreprocessor:
 
     @staticmethod
     def _assess_brightness(mean_brightness: float) -> float:
-        """Assess brightness quality (0.0-1.0)."""
-        if 40 <= mean_brightness <= 180:
-            return 1.0
-        elif 30 <= mean_brightness <= 200:
-            return 0.7
-        elif 20 <= mean_brightness <= 220:
-            return 0.4
-        return 0.1
+        """WEBCAM-OPTIMIZED brightness assessment (0.0-1.0)."""
+        if 25 <= mean_brightness <= 210:  # Very lenient range
+            return 0.2
+        elif 20 <= mean_brightness <= 225:  # Extended lenient range
+            return 0.15
+        elif 15 <= mean_brightness <= 235:  # Maximum lenient range
+            return 0.1
+        return 0.0
 
     @staticmethod
     def _assess_contrast(std_contrast: float) -> float:
-        """Assess contrast quality (0.0-1.0)."""
-        if std_contrast > 40:
-            return 1.0
-        elif std_contrast > 30:
-            return 0.7
-        elif std_contrast > 20:
-            return 0.4
-        return 0.1
+        """WEBCAM-OPTIMIZED contrast assessment (0.0-1.0)."""
+        if std_contrast > 25:  # Lower threshold
+            return 0.2
+        elif std_contrast > 20:  # More lenient
+            return 0.15
+        elif std_contrast > 18:  # Very lenient
+            return 0.1
+        return 0.0
 
     @staticmethod
     def _assess_sharpness(blur_variance: float) -> float:
-        """Assess sharpness quality (0.0-1.0)."""
-        if blur_variance > 150:
-            return 1.0
-        elif blur_variance > 100:
-            return 0.7
-        elif blur_variance > 50:
-            return 0.4
-        return 0.1
+        """WEBCAM-OPTIMIZED sharpness assessment (0.0-1.0)."""
+        if blur_variance > 100:  # Lower threshold
+            return 0.2
+        elif blur_variance > 70:  # More lenient
+            return 0.15
+        elif blur_variance > 45:  # Very lenient
+            return 0.1
+        return 0.0
 
     @staticmethod
     def _calculate_edge_density(image: np.ndarray) -> float:

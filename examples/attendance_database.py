@@ -304,6 +304,223 @@ class AttendanceDatabase:
                 writer.writerows(records)
         
         print(f"Exported {len(records)} records to {output_path}")
+    
+    def get_all_people(self) -> List[Dict]:
+        """
+        Get all people from database.
+        
+        Returns:
+            List of people with their details
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, label_id, email, department, created_at
+                FROM people
+                ORDER BY name
+                """
+            )
+            
+            people = []
+            for row in cursor.fetchall():
+                people.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'label_id': row[2],
+                    'email': row[3],
+                    'department': row[4],
+                    'created_at': row[5]
+                })
+            
+            return people
+    
+    def get_person_by_id(self, person_id: int) -> Optional[Dict]:
+        """
+        Get person details by ID.
+        
+        Args:
+            person_id: Person ID
+            
+        Returns:
+            Person details or None
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, name, label_id, email, department, created_at
+                FROM people
+                WHERE id = ?
+                """,
+                (person_id,)
+            )
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'id': row[0],
+                    'name': row[1],
+                    'label_id': row[2],
+                    'email': row[3],
+                    'department': row[4],
+                    'created_at': row[5]
+                }
+            return None
+    
+    def update_person(
+        self,
+        person_id: int,
+        name: Optional[str] = None,
+        email: Optional[str] = None,
+        department: Optional[str] = None
+    ) -> bool:
+        """
+        Update person details.
+        
+        Args:
+            person_id: Person ID
+            name: New name (optional)
+            email: New email (optional)
+            department: New department (optional)
+            
+        Returns:
+            True if updated successfully
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            updates = []
+            params = []
+            
+            if name is not None:
+                updates.append("name = ?")
+                params.append(name)
+            if email is not None:
+                updates.append("email = ?")
+                params.append(email)
+            if department is not None:
+                updates.append("department = ?")
+                params.append(department)
+            
+            if not updates:
+                return False
+            
+            params.append(person_id)
+            query = f"UPDATE people SET {', '.join(updates)} WHERE id = ?"
+            
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def delete_person(self, person_id: int) -> bool:
+        """
+        Delete person and their attendance records.
+        
+        Args:
+            person_id: Person ID
+            
+        Returns:
+            True if deleted successfully
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Delete attendance records
+            cursor.execute("DELETE FROM attendance WHERE person_id = ?", (person_id,))
+            cursor.execute("DELETE FROM daily_summary WHERE person_id = ?", (person_id,))
+            
+            # Delete person
+            cursor.execute("DELETE FROM people WHERE id = ?", (person_id,))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def delete_attendance_record(self, record_id: int) -> bool:
+        """
+        Delete an attendance record.
+        
+        Args:
+            record_id: Attendance record ID
+            
+        Returns:
+            True if deleted successfully
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM attendance WHERE id = ?", (record_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def get_person_attendance_history(
+        self,
+        person_id: int,
+        limit: int = 10
+    ) -> List[Dict]:
+        """
+        Get attendance history for a person.
+        
+        Args:
+            person_id: Person ID
+            limit: Maximum number of records
+            
+        Returns:
+            List of attendance records
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT timestamp, confidence, status
+                FROM attendance
+                WHERE person_id = ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+                """,
+                (person_id, limit)
+            )
+            
+            records = []
+            for row in cursor.fetchall():
+                records.append({
+                    'timestamp': row[0],
+                    'confidence': row[1],
+                    'status': row[2]
+                })
+            
+            return records
+    
+    def get_settings(self) -> Dict:
+        """
+        Get system settings.
+        
+        Returns:
+            Dictionary of settings
+        """
+        # For now, return default settings
+        # In production, these would be stored in a settings table
+        return {
+            'system_name': 'Attendance Management System',
+            'confidence_threshold': 50.0,
+            'detection_mode': 'highacc',
+            'working_days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            'enable_notifications': False,
+            'admin_email': ''
+        }
+    
+    def update_settings(self, settings: Dict) -> bool:
+        """
+        Update system settings.
+        
+        Args:
+            settings: Dictionary of settings to update
+            
+        Returns:
+            True if updated successfully
+        """
+        # For now, just return True
+        # In production, these would be stored in a settings table
+        return True
 
 
 # Example usage

@@ -97,15 +97,15 @@ class FaceRecognizer:
     MAX_LABEL_HISTORY = 5
     CONFIDENCE_STABILITY_THRESHOLD = 15.0
     
-    # Quality thresholds - OPTIMIZED for better recognition
-    MIN_QUALITY_THRESHOLD = 0.4  # Raised minimum quality requirement
-    HIGH_QUALITY_THRESHOLD = 0.85  # Raised high quality threshold
-    LOW_QUALITY_THRESHOLD = 0.5  # Raised low quality threshold
+    # Quality thresholds - WEBCAM OPTIMIZED
+    MIN_QUALITY_THRESHOLD = 0.30  # Lowered for webcam quality
+    HIGH_QUALITY_THRESHOLD = 0.75  # Lowered for webcam quality
+    LOW_QUALITY_THRESHOLD = 0.40  # Lowered for webcam quality
     
-    # Confidence bounds - OPTIMIZED for OMAR's 76-98 range to reach 50
-    ULTRA_STRICT_THRESHOLD = 100.0  # Allow OMAR's range through
-    UNCERTAIN_RANGE = (100.0, 120.0)  # Higher uncertain range
-    MAX_CONFIDENCE_THRESHOLD = 120.0  # Higher threshold
+    # Confidence bounds - WEBCAM OPTIMIZED
+    ULTRA_STRICT_THRESHOLD = 120.0  # More lenient
+    UNCERTAIN_RANGE = (110.0, 130.0)  # More lenient range
+    MAX_CONFIDENCE_THRESHOLD = 140.0  # More lenient threshold
     
     # Blink verification constants (based on research) - LENIENT DEFAULTS
     MIN_BLINK_INTERVAL = 0.5  # Minimum seconds between blinks (very lenient)
@@ -1022,32 +1022,33 @@ class FaceRecognizer:
 
     def _apply_distance_adjustment(self, smoothed_conf: float, face_size: Tuple[int, int]) -> float:
         """
-        Apply GRANULAR distance-adaptive confidence adjustment.
+        WEBCAM-OPTIMIZED distance adjustment for 720p.
         
-        More nuanced adjustments across the full distance spectrum:
-        - Very small faces (very far): Maximum reduction in penalty
-        - Small faces (far): Moderate reduction in penalty  
-        - Medium faces (optimal): No adjustment (baseline)
-        - Large faces (close): Small improvement
-        - Very large faces (very close): Moderate improvement
+        Optimized for typical webcam face sizes (720p: 3000-40000 pixels):
+        - Very far (<6000): 25% improvement
+        - Far (<12000): 15% improvement  
+        - Medium-far (<18000): 8% improvement
+        - Optimal (<25000): No adjustment (baseline)
+        - Close (<35000): 12% improvement
+        - Very close (>35000): 20% improvement
         """
         try:
             face_width, face_height = face_size
             face_area = face_width * face_height
             
-            # Granular distance-based adjustment factors
-            if face_area < 5000:  # Very small face (very far away)
-                return smoothed_conf * 0.80  # 20% reduction in penalty
-            elif face_area < 10000:  # Small face (far away)
-                return smoothed_conf * 0.87  # 13% reduction in penalty
-            elif face_area < 18000:  # Medium-small face
-                return smoothed_conf * 0.93  # 7% reduction in penalty
-            elif face_area < 25000:  # Medium face (optimal distance)
-                return smoothed_conf  # No adjustment - baseline
-            elif face_area < 35000:  # Medium-large face (close)
-                return smoothed_conf * 0.85  # 15% improvement for close faces
-            else:  # Large face (very close)
-                return smoothed_conf * 0.78  # 22% improvement for very close faces
+            # WEBCAM-SPECIFIC thresholds (720p faces: 3000-40000 pixels)
+            if face_area < 6000:  # Very far
+                return smoothed_conf * 0.75  # 25% improvement
+            elif face_area < 12000:  # Far
+                return smoothed_conf * 0.85  # 15% improvement
+            elif face_area < 18000:  # Medium-far
+                return smoothed_conf * 0.92  # 8% improvement
+            elif face_area < 25000:  # Optimal - no adjustment
+                return smoothed_conf
+            elif face_area < 35000:  # Close
+                return smoothed_conf * 0.88  # 12% improvement
+            else:  # Very close
+                return smoothed_conf * 0.80  # 20% improvement
                 
         except Exception as e:
             warnings.warn(f"Distance adjustment failed: {e}", RuntimeWarning)
@@ -1098,24 +1099,24 @@ class FaceRecognizer:
         if confidence >= threshold:
             return False
         
-        # Stage 2: Ultra-strict confidence bound - DISTANCE TOLERANT
-        if confidence > 95:  # More lenient for distance variations
+        # Stage 2: Ultra-strict confidence bound - WEBCAM OPTIMIZED
+        if confidence > 100:  # More lenient for webcam variations
             return False
         
-        # Stage 3: Reject uncertain range - DISTANCE TOLERANT
-        if 85 <= confidence <= 105:  # More lenient uncertain range for distance
+        # Stage 3: Reject uncertain range - WEBCAM OPTIMIZED
+        if 90 <= confidence <= 110:  # More lenient uncertain range
             return False
         
-        # Stage 4: Quality-based rejection for high confidence - DISTANCE TOLERANT
-        if confidence > 90 and quality_score < 0.5:  # More lenient quality requirement
+        # Stage 4: Quality-based rejection for high confidence - WEBCAM OPTIMIZED
+        if confidence > 95 and quality_score < 0.40:  # More lenient quality requirement
             return False
         
-        # Stage 5: Reject very high confidence (likely false positive) - DISTANCE TOLERANT
-        if confidence > 110:  # More lenient high confidence threshold
+        # Stage 5: Reject very high confidence (likely false positive) - WEBCAM OPTIMIZED
+        if confidence > 120:  # Much more lenient high confidence threshold
             return False
         
-        # Stage 6: Minimum quality requirement - DISTANCE TOLERANT
-        if quality_score < 0.3:  # More lenient minimum quality for distance variations
+        # Stage 6: Minimum quality requirement - WEBCAM OPTIMIZED
+        if quality_score < 0.25:  # More lenient minimum quality for webcam
             return False
         
         return True

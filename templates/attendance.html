@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Attendance - Attendance Management{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">Attendance Records</h2>
+        <div>
+            <button class="btn btn-success" onclick="showManualAttendanceModal()">➕ Manual Entry</button>
+            <button class="btn btn-primary" onclick="showAbsenteesModal()">📋 View Absentees</button>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+            <label>Start Date</label>
+            <input type="date" id="start-date" onchange="loadAttendanceRange()">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+            <label>End Date</label>
+            <input type="date" id="end-date" onchange="loadAttendanceRange()">
+        </div>
+        <div class="form-group" style="flex: 2; min-width: 250px;">
+            <label>Search</label>
+            <input type="text" id="search-attendance" placeholder="Search by name or department..." oninput="searchAttendance()">
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+        <button class="btn btn-primary" onclick="loadTodayAttendance()">Today</button>
+        <button class="btn btn-primary" onclick="loadThisWeek()">This Week</button>
+        <button class="btn btn-primary" onclick="loadThisMonth()">This Month</button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Department</th>
+                <th>Confidence</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="attendance-list">
+            <tr><td colspan="6" class="loading">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Manual Attendance Modal -->
+<div id="manual-attendance-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Manual Attendance</h2>
+            <span class="modal-close" onclick="closeModal('manual-attendance-modal')">&times;</span>
+        </div>
+        <form onsubmit="addManualAttendance(event)">
+            <div class="form-group">
+                <label>Person *</label>
+                <select id="manual-person" required>
+                    <option value="">Select person...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="manual-status">
+                    <option value="present">Present</option>
+                    <option value="late">Late</option>
+                    <option value="excused">Excused</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Attendance</button>
+        </form>
+    </div>
+</div>
+
+<!-- Absentees Modal -->
+<div id="absentees-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Today's Absentees</h2>
+            <span class="modal-close" onclick="closeModal('absentees-modal')">&times;</span>
+        </div>
+        <div id="absentees-list">
+            <p class="loading">Loading...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allRecords = [];
+    
+    async function loadTodayAttendance() {
+        try {
+            const response = await fetch('/api/attendance/today');
+            const data = await response.json();
+            
+            if (data.success) {
+                allRecords = data.records;
+                displayAttendance(allRecords);
+            } else {
+                showError(data.error);
+            }
+        } catch (error) {
+            showError('Failed to load attendance: ' + error.message);
+        }
+    }
+    
+    async function loadAttendanceRange() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        
+        if (!startDate || !endDate) return;
+        
+        try {
+            const response = await fetch(`/api/attendance/range?start_date=${startDate}&end_date=${endDate}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                allRecords = data.records;
+                displayAttendance(allRecords);
+            } else {
+                showError(data.error);
+            }
+        } catch (error) {
+            showError('Failed to load attendance: ' + error.message);
+        }
+    }
+    
+    function loadThisWeek() {
+        const today = new Date();
+        const firstDay = new Date(today);
+        firstDay.setDate(today.getDate() - today.getDay());
+        const lastDay = new Date(today);
+        lastDay.setDate(today.getDate() - today.getDay() + 6);
+        
+        document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('end-date').value = lastDay.toISOString().split('T')[0];
+        loadAttendanceRange();
+    }
+    
+    function loadThisMonth() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('end-date').value = lastDay.toISOString().split('T')[0];
+        loadAttendanceRange();
+    }
+    
+    function displayAttendance(records) {
+        const tbody = document.getElementById('attendance-list');
+        tbody.innerHTML = '';
+        
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No attendance records found for selected period</td></tr>';
+            return;
+        }
+        
+        records.forEach(record => {
+            const row = tbody.insertRow();
+            const timestamp = new Date(record.timestamp);
+            const statusClass = record.status === 'present' ? 'badge-success' : 'badge-danger';
+            
+            row.innerHTML = `
+                <td><strong>${record.name}</strong></td>
+                <td>${formatDate(record.timestamp)}</td>
+                <td>${timestamp.toLocaleTimeString()}</td>
+                <td>${record.department || '-'}</td>
+                <td>${record.confidence ? record.confidence.toFixed(1) : '-'}</td>
+                <td><span class="badge ${statusClass}">${record.status}</span></td>
+            `;
+        });
+    }
+    
+    function searchAttendance() {
+        const query = document.getElementById('search-attendance').value.toLowerCase();
+        const filtered = allRecords.filter(r => 
+            r.name.toLowerCase().includes(query) ||
+            (r.department && r.department.toLowerCase().includes(query))
+        );
+        displayAttendance(filtered);
+    }
+    
+    async function showManualAttendanceModal() {
+        try {
+            const response = await fetch('/api/people');
+            const data = await response.json();
+            
+            if (data.success) {
+                const select = document.getElementById('manual-person');
+                select.innerHTML = '<option value="">Select person...</option>';
+                data.people.forEach(person => {
+                    const option = document.createElement('option');
+                    option.value = person.name;
+                    option.textContent = `${person.name} (${person.department || 'No Dept'})`;
+                    select.appendChild(option);
+                });
+                document.getElementById('manual-attendance-modal').style.display = 'block';
+            }
+        } catch (error) {
+            showError('Failed to load people: ' + error.message);
+        }
+    }
+    
+    async function addManualAttendance(event) {
+        event.preventDefault();
+        
+        const attendanceData = {
+            person_name: document.getElementById('manual-person').value,
+            status: document.getElementById('manual-status').value,
+            confidence: 100.0
+        };
+        
+        try {
+            const response = await fetch('/api/attendance/manual', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(attendanceData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showSuccess('Attendance recorded successfully!');
+                closeModal('manual-attendance-modal');
+                event.target.reset();
+                loadTodayAttendance();
+            } else {
+                showError(data.error);
+            }
+        } catch (error) {
+            showError('Failed to add attendance: ' + error.message);
+        }
+    }
+    
+    async function showAbsenteesModal() {
+        document.getElementById('absentees-modal').style.display = 'block';
+        
+        try {
+            const response = await fetch('/api/attendance/absentees');
+            const data = await response.json();
+            
+            if (data.success) {
+                const list = document.getElementById('absentees-list');
+                
+                if (data.absentees.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; padding: 2rem; color: #48bb78;">✅ Everyone is present today!</p>';
+                } else {
+                    list.innerHTML = '<ul style="list-style: none; padding: 0;">' +
+                        data.absentees.map(name => `<li style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">❌ ${name}</li>`).join('') +
+                        '</ul>';
+                }
+            } else {
+                document.getElementById('absentees-list').innerHTML = '<p class="error">' + data.error + '</p>';
+            }
+        } catch (error) {
+            document.getElementById('absentees-list').innerHTML = '<p class="error">Failed to load absentees</p>';
+        }
+    }
+    
+    // Set today as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start-date').value = today;
+    document.getElementById('end-date').value = today;
+    
+    // Load today's attendance on page load
+    loadTodayAttendance();
+</script>
+{% endblock %}

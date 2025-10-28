@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Settings - Attendance Management{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>System Settings</h2>
+    <p>Configure attendance system settings and preferences.</p>
+    
+    <form onsubmit="saveSettings(event)">
+        <h3>General Settings</h3>
+        <div class="form-group">
+            <label>System Name</label>
+            <input type="text" id="system-name" value="Attendance Management System">
+        </div>
+        
+        <div class="form-group">
+            <label>Working Days</label>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <label style="font-weight: normal;"><input type="checkbox" id="day-mon" checked> Monday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-tue" checked> Tuesday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-wed" checked> Wednesday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-thu" checked> Thursday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-fri" checked> Friday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-sat"> Saturday</label>
+                <label style="font-weight: normal;"><input type="checkbox" id="day-sun"> Sunday</label>
+            </div>
+        </div>
+        
+        <h3>Recognition Settings</h3>
+        <div class="form-group">
+            <label>Confidence Threshold</label>
+            <input type="number" id="confidence-threshold" min="0" max="100" step="0.1" value="50.0">
+            <small>Lower values = stricter recognition (default: 50.0)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Detection Mode</label>
+            <select id="detection-mode">
+                <option value="default">Default</option>
+                <option value="strict">Strict</option>
+                <option value="balanced" selected>Balanced (Recommended)</option>
+                <option value="highacc">High Accuracy</option>
+                <option value="ultra">Ultra</option>
+            </select>
+        </div>
+        
+        <h3>Notification Settings</h3>
+        <div class="form-group">
+            <label style="font-weight: normal;"><input type="checkbox" id="enable-notifications"> Enable Email Notifications (Coming Soon)</label>
+        </div>
+        
+        <div class="form-group">
+            <label>Admin Email</label>
+            <input type="email" id="admin-email" placeholder="admin@example.com">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Database Management</h2>
+    
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="showDatabaseInfo()">📊 Database Info</button>
+        <button class="btn btn-success" onclick="backupDatabase()">💾 Backup Database</button>
+        <button class="btn btn-danger" onclick="clearOldRecords()">🗑️ Clear Old Records</button>
+    </div>
+    
+    <div id="database-info" style="display: none; margin-top: 1.5rem;">
+        <h3>Database Information</h3>
+        <table>
+            <tr>
+                <td><strong>Database Location</strong></td>
+                <td id="db-path">Loading...</td>
+            </tr>
+            <tr>
+                <td><strong>Total People</strong></td>
+                <td id="total-people-db">Loading...</td>
+            </tr>
+            <tr>
+                <td><strong>Total Attendance Records</strong></td>
+                <td id="total-records">Loading...</td>
+            </tr>
+            <tr>
+                <td><strong>Today's Records</strong></td>
+                <td id="today-records">Loading...</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2>System Information</h2>
+    <table>
+        <tr>
+            <td><strong>Version</strong></td>
+            <td>1.0.0</td>
+        </tr>
+        <tr>
+            <td><strong>Platform</strong></td>
+            <td>Python Flask Web Application</td>
+        </tr>
+        <tr>
+            <td><strong>Database</strong></td>
+            <td>SQLite3</td>
+        </tr>
+        <tr>
+            <td><strong>Face Recognition</strong></td>
+            <td>OpenCV LBPH + Anti-Spoofing (Blink Detection)</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function saveSettings(event) {
+        event.preventDefault();
+        
+        const settings = {
+            system_name: document.getElementById('system-name').value,
+            confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
+            detection_mode: document.getElementById('detection-mode').value,
+            enable_notifications: document.getElementById('enable-notifications').checked,
+            admin_email: document.getElementById('admin-email').value
+        };
+        
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(settings)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showSuccess('Settings saved successfully!');
+            } else {
+                showError(data.error);
+            }
+        } catch (error) {
+            showError('Failed to save settings: ' + error.message);
+        }
+    }
+    
+    async function showDatabaseInfo() {
+        const infoDiv = document.getElementById('database-info');
+        infoDiv.style.display = 'block';
+        
+        try {
+            // Get people count
+            const peopleResponse = await fetch('/api/people');
+            const peopleData = await peopleResponse.json();
+            
+            // Get today's attendance
+            const todayResponse = await fetch('/api/attendance/today');
+            const todayData = await todayResponse.json();
+            
+            document.getElementById('db-path').textContent = 'attendance.db (SQLite)';
+            document.getElementById('total-people-db').textContent = peopleData.success ? peopleData.people.length : 'Error';
+            document.getElementById('today-records').textContent = todayData.success ? todayData.records.length : 'Error';
+            document.getElementById('total-records').textContent = 'Calculating...';
+            
+            showSuccess('Database information loaded!');
+        } catch (error) {
+            showError('Failed to load database info: ' + error.message);
+        }
+    }
+    
+    function backupDatabase() {
+        if (confirm('Create a backup of the attendance database?\n\nThis will create a copy named attendance_backup.db')) {
+            showSuccess('Database backup feature coming soon!\n\nFor now, manually copy attendance.db to create a backup.');
+        }
+    }
+    
+    function clearOldRecords() {
+        if (confirm('This will delete attendance records older than 1 year.\n\nThis action cannot be undone. Continue?')) {
+            showSuccess('Clear old records feature coming soon!\n\nFor now, you can manually delete records using SQL queries.');
+        }
+    }
+    
+    // Load settings on page load
+    async function loadSettings() {
+        try {
+            const response = await fetch('/api/settings');
+            const data = await response.json();
+            
+            if (data.success) {
+                const settings = data.settings;
+                document.getElementById('system-name').value = settings.system_name || 'Attendance Management System';
+                document.getElementById('confidence-threshold').value = settings.confidence_threshold || 50.0;
+                document.getElementById('detection-mode').value = settings.detection_mode || 'balanced';
+                document.getElementById('enable-notifications').checked = settings.enable_notifications || false;
+                document.getElementById('admin-email').value = settings.admin_email || '';
+            }
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+        }
+    }
+    
+    loadSettings();
+</script>
+{% endblock %}
