@@ -1,0 +1,48 @@
+================================================================================
+DETAILED PER-USER RECOGNITION REPORT
+================================================================================
+
+SESSION INFORMATION
+--------------------------------------------------------------------------------
+Session ID: 20251029_012046
+Start Time: 2025-10-29T01:20:46.600690
+Duration: 28.73s
+Total Attempts: 263
+Unknown Attempts: 219
+
+OVERALL SUMMARY
+--------------------------------------------------------------------------------
+Total Users Recognized: 1
+Overall Accuracy: 100.0%
+Total Spoofs Detected: 44
+
+================================================================================
+PER-USER DETAILED RESULTS
+================================================================================
+
+
+User: OMAR
+--------------------------------------------------------------------------------
+  Total Attempts: 44
+  Successful Recognitions: 44
+  Failed Attempts: 0
+  Recognition Rate: 100.0%
+
+  Average Confidence: 33.7
+  Confidence Range: 30.01 - 38.59
+  Average Quality Score: 0.85
+  Average Processing Time: 46.53ms
+
+  Anti-Spoofing Checks:
+    Total Checks: 44
+    Real Detections: 44
+    Spoof Detections: 0
+    Detection Rate: 0.0%
+
+  Edge Case Performance:
+    Low Quality Detections: 0
+    Low Confidence Cases: 0
+    High Confidence Cases: 0
+
+  Sample Confidences (First 10): 30.71, 30.37, 30.29, 30.46, 30.62, 30.74, 30.76, 36.76, 32.88, 31.66
+

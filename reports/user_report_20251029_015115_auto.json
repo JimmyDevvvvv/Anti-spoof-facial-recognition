@@ -1,0 +1,53 @@
+{
+  "session_info": {
+    "session_id": "20251029_015115",
+    "start_time": "2025-10-29T01:51:15.904717",
+    "duration_seconds": 21.92,
+    "total_attempts": 300,
+    "unknown_attempts": 115
+  },
+  "per_user_details": {
+    "OMAR": {
+      "total_attempts": 185,
+      "successful_recognitions": 185,
+      "failed_attempts": 0,
+      "recognition_rate": 100.0,
+      "average_confidence": 35.85,
+      "confidence_range": {
+        "min": 30.12,
+        "max": 48.67
+      },
+      "average_quality_score": 0.849,
+      "average_processing_time_ms": 35.84,
+      "anti_spoofing": {
+        "total_checks": 185,
+        "real_detections": 185,
+        "spoof_detections": 0,
+        "detection_rate": 0.0,
+        "spoof_types": {}
+      },
+      "edge_cases": {
+        "low_quality_detections": 0,
+        "low_confidence_cases": 0,
+        "high_confidence_cases": 0
+      },
+      "sample_confidences": [
+        48.67,
+        41.67,
+        45.07,
+        44.56,
+        43.73,
+        43.36,
+        37.05,
+        34.87,
+        39.92,
+        35.21
+      ]
+    }
+  },
+  "summary": {
+    "total_users": 1,
+    "overall_accuracy": 100.0,
+    "total_spoofs_detected": 0
+  }
+}

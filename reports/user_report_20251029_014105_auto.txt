@@ -1,0 +1,48 @@
+================================================================================
+DETAILED PER-USER RECOGNITION REPORT
+================================================================================
+
+SESSION INFORMATION
+--------------------------------------------------------------------------------
+Session ID: 20251029_014105
+Start Time: 2025-10-29T01:41:05.446351
+Duration: 28.77s
+Total Attempts: 400
+Unknown Attempts: 385
+
+OVERALL SUMMARY
+--------------------------------------------------------------------------------
+Total Users Recognized: 1
+Overall Accuracy: 100.0%
+Total Spoofs Detected: 38
+
+================================================================================
+PER-USER DETAILED RESULTS
+================================================================================
+
+
+User: Person 22
+--------------------------------------------------------------------------------
+  Total Attempts: 15
+  Successful Recognitions: 15
+  Failed Attempts: 0
+  Recognition Rate: 100.0%
+
+  Average Confidence: 47.98
+  Confidence Range: 42.87 - 49.95
+  Average Quality Score: 0.85
+  Average Processing Time: 40.25ms
+
+  Anti-Spoofing Checks:
+    Total Checks: 15
+    Real Detections: 15
+    Spoof Detections: 0
+    Detection Rate: 0.0%
+
+  Edge Case Performance:
+    Low Quality Detections: 0
+    Low Confidence Cases: 0
+    High Confidence Cases: 0
+
+  Sample Confidences (First 10): 48.7, 49.28, 49.58, 49.95, 43.86, 48.58, 48.79, 42.87, 48.1, 49.17
+

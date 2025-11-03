@@ -22,9 +22,10 @@ Controls:
     2 - Balanced mode (default)
     3 - Strict mode
     4 - Paranoid mode
+    A - Toggle anti-spoofing detection
     D - Toggle debug info
     S - Toggle statistics
-    F - Toggle face detection
+    G - Generate report
     R - Reset statistics
     SPACE - Take screenshot
 """
@@ -47,7 +48,7 @@ try:
         AttackType,
         AntiSpoofResult
     )
-    from generate_report import TestReportGenerator
+    from src.face.per_user_report_generator import PerUserReportGenerator
 except ImportError as e:
     print(f"ERROR: Could not import required modules: {e}")
     print("Make sure you're running from the project root directory.")
@@ -300,7 +301,11 @@ class VisualOverlay:
             status = f"[OK] {name}"
             color = COLOR_GREEN
         else:
-            status = f"[ERROR] {name}"
+            # Show "UNKNOWN" for unrecognized faces
+            if name == "No Face Detected":
+                status = f"[WAITING] {name}"
+            else:
+                status = "[⚠️] UNKNOWN"
             color = COLOR_RED
         
         cv2.putText(frame, status, (panel_x + 10, panel_y + 25), 
@@ -354,7 +359,7 @@ class VisualOverlay:
         """Draw control hints."""
         h, w = frame.shape[:2]
         panel_x = w - 260
-        panel_y = h - 135  # Increased from 120 to fit new control
+        panel_y = h - 150  # Increased to fit new control
         
         # Semi-transparent background
         overlay = frame.copy()
@@ -369,6 +374,7 @@ class VisualOverlay:
         # Controls
         controls = [
             "1-4: Security levels",
+            "A: Toggle anti-spoof",
             "D: Toggle debug",
             "S: Toggle stats",
             "G: Generate report",
@@ -442,7 +448,7 @@ class LiveTestSystem:
                     print(f"    LBPH available: {hasattr(cv2.face, 'LBPHFaceRecognizer_create')}")
                 
                 self.recognizer = FaceRecognizer(
-                    threshold=50.0,
+                    threshold=42.0,  # Stricter threshold for better accuracy (lower = stricter)
                     enable_antispoofing=True,  # Enable integrated anti-spoofing
                     antispoofing_mode="basic",  # Use basic mode (balanced)
                     reject_on_spoof=True  # Reject spoofed faces
@@ -463,8 +469,9 @@ class LiveTestSystem:
         
         # Initialize face detector
         print("[3/4] Initializing face detector...")
+        haar_path = cv2.data.haarcascades if hasattr(cv2.data, 'haarcascades') else ''  # type: ignore
         self.face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            haar_path + 'haarcascade_frontalface_default.xml'
         )
         
         # Initialize camera
@@ -486,9 +493,15 @@ class LiveTestSystem:
         self.perf_tracker = PerformanceTracker()
         self.overlay = VisualOverlay()
         
-        # Initialize report generator
-        self.report_generator = TestReportGenerator()
+        # Initialize per-user report generator
+        self.report_generator = PerUserReportGenerator(
+            db_path="user_reports.db",
+            reports_dir="reports",
+            auto_save_interval=50  # Auto-save every 50 attempts
+        )
         self.enable_reporting = True
+        print("  [OK] Per-user report generation ENABLED")
+        print("       Reports will be saved to 'reports' directory")
         
         # Display settings
         self.show_statistics = True
@@ -500,8 +513,13 @@ class LiveTestSystem:
         self.last_recognition_result = None
         self.last_face_bbox = None
         
+        # Timer for terminal output (print every 5 seconds)
+        self.last_print_time = 0.0
+        self.print_interval = 5.0  # seconds
+        
         print("\n[OK] System ready!")
         print("\nStarting live test... Press Q or ESC to quit.")
+        print("Press 'A' to toggle anti-spoofing detection.")
         print("Press 'G' to generate report at any time.")
         print("=" * 70 + "\n")
     
@@ -531,57 +549,86 @@ class LiveTestSystem:
             # Extract face ROI
             face_roi = frame[y:y+h, x:x+w]
             
-            # Anti-spoofing check
-            antispoofing_result = self.antispoofing.check_video_frame(face_roi)
+            # Anti-spoofing check (skip if disabled)
+            if self.recognizer and hasattr(self.recognizer, 'enable_antispoofing') and not self.recognizer.enable_antispoofing:
+                # Anti-spoofing disabled - treat all faces as real
+                from src.face.final_anti_spoof import AntiSpoofResult, AttackType, LivenessMetrics
+                antispoofing_result = AntiSpoofResult(
+                    is_real=True,
+                    confidence=1.0,
+                    attack_type=AttackType.NONE,
+                    attack_confidence=0.0,
+                    metrics=LivenessMetrics(
+                        texture_score=1.0,
+                        motion_score=1.0,
+                        color_score=1.0,
+                        depth_score=1.0,
+                        frequency_score=1.0,
+                        blink_score=0.0,
+                        pulse_score=1.0,
+                        color_temp_score=1.0,
+                        refresh_score=1.0,
+                        rppg_score=1.0
+                    ),
+                    image_quality="excellent",
+                    processing_time_ms=0.0
+                )
+            else:
+                # Anti-spoofing enabled - perform check
+                antispoofing_result = self.antispoofing.check_video_frame(face_roi)
+            
             self.last_antispoofing_result = antispoofing_result
             self.last_face_bbox = (x, y, w, h)
             
             # Track anti-spoofing result
             self.perf_tracker.add_antispoofing_result(antispoofing_result.is_real)
             
-            # Record to report generator
-            if self.enable_reporting:
-                recognition_name = None
-                recognition_conf = None
-                
-                # Recognition (only if real and enabled)
-                if self.recognition_enabled and antispoofing_result.is_real and self.recognizer:
-                    try:
-                        recognition_result = self.recognizer.predict_with_name(face_roi)
-                        self.last_recognition_result = recognition_result
-                        self.perf_tracker.add_recognition_result(recognition_result.recognized)
-                        if recognition_result.recognized:
-                            recognition_name = recognition_result.name
-                            recognition_conf = recognition_result.confidence
-                    except Exception as e:
-                        print(f"Recognition error: {e}")
-                        self.last_recognition_result = None
-                else:
+            # Recognition (only if real and enabled)
+            if self.recognition_enabled and antispoofing_result.is_real and self.recognizer:
+                try:
+                    recognition_result = self.recognizer.predict_with_name(face_roi)
+                    self.last_recognition_result = recognition_result
+                    self.perf_tracker.add_recognition_result(recognition_result.recognized)
+                    
+                    # Log to per-user report generator
+                    if self.enable_reporting and self.report_generator:
+                        user_name = recognition_result.name if recognition_result.recognized else None
+                        quality_score = getattr(recognition_result, 'quality_score', 0.0)
+                        self.report_generator.log_recognition_attempt(
+                            user_name=user_name,
+                            recognized=recognition_result.recognized,
+                            confidence=recognition_result.confidence,
+                            quality_score=quality_score,
+                            processing_time=(time.time() - start_time),
+                            is_spoof=False,  # Already passed anti-spoof check
+                            spoof_type=None
+                        )
+                    
+                    # Print per-user statistics every 5 seconds
+                    current_time = time.time()
+                    if current_time - self.last_print_time >= self.print_interval:
+                        self.last_print_time = current_time
+                        self.print_per_user_stats()
+                    
+                except Exception as e:
+                    print(f"Recognition error: {e}")
                     self.last_recognition_result = None
+            else:
+                self.last_recognition_result = None
                 
-                # Record frame data to report
-                self.report_generator.record_frame(
-                    is_real=antispoofing_result.is_real,
-                    confidence=antispoofing_result.confidence,
-                    attack_type=antispoofing_result.attack_type.value,
-                    metrics={
-                        'texture_score': antispoofing_result.metrics.texture_score,
-                        'motion_score': antispoofing_result.metrics.motion_score,
-                        'color_score': antispoofing_result.metrics.color_score,
-                        'depth_score': antispoofing_result.metrics.depth_score,
-                        'frequency_score': antispoofing_result.metrics.frequency_score,
-                        'blink_score': antispoofing_result.metrics.blink_score,
-                        'pulse_score': antispoofing_result.metrics.pulse_score,
-                        'color_temp_score': antispoofing_result.metrics.color_temp_score,
-                        'refresh_score': antispoofing_result.metrics.refresh_score,
-                        'rppg_score': antispoofing_result.metrics.rppg_score,
-                    },
-                    warnings=antispoofing_result.warnings,
-                    recognition_name=recognition_name,
-                    recognition_confidence=recognition_conf,
-                    fps=self.perf_tracker.fps,
-                    processing_time=0  # Will be calculated below
-                )
+                # Log rejected/spoof attempts
+                if self.enable_reporting and self.report_generator:
+                    if not antispoofing_result.is_real:
+                        # Spoof detected
+                        self.report_generator.log_recognition_attempt(
+                            user_name=None,
+                            recognized=False,
+                            confidence=100.0,  # High confidence it's a spoof
+                            quality_score=0.0,
+                            processing_time=(time.time() - start_time),
+                            is_spoof=True,
+                            spoof_type=antispoofing_result.attack_type.value
+                        )
             
             # Draw face box (only if we have results)
             if self.last_antispoofing_result:
@@ -591,8 +638,9 @@ class LiveTestSystem:
                         label = self.last_recognition_result.name
                         confidence = 1.0 - (self.last_recognition_result.confidence / 100.0)
                     else:
-                        label = "Real (Unknown)"
-                        confidence = antispoofing_result.confidence
+                        # UNKNOWN PERSON - Not in database
+                        label = "⚠️ UNKNOWN PERSON"
+                        confidence = 0.0  # Show low confidence for unknowns
                 else:
                     label = antispoofing_result.attack_type.value
                     confidence = 1.0 - antispoofing_result.confidence
@@ -681,13 +729,72 @@ class LiveTestSystem:
         
         # Recreate anti-spoofing detector with new level
         if self.antispoofing:
+            print(f"\n{'='*60}")
+            print(f"[DEBUG] Changing security level from {self.antispoofing.level.value.upper()} to {level.upper()}")
             self.antispoofing = UltimateAntiSpoof(
                 level=new_level.value,  # Convert enum to string
                 enable_video_mode=True,
                 debug=False
             )
+            # Show new configuration
+            print(f"[DEBUG] New configuration:")
+            print(f"  - Confidence threshold: {self.antispoofing.config['confidence_threshold']:.2%}")
+            print(f"  - Min checks passing: {self.antispoofing.config['min_checks_passing']}/10")
+            print(f"  - Require blink: {'YES' if self.antispoofing.config['require_blink'] else 'NO'}")
+            print(f"  - Require motion: {'YES' if self.antispoofing.config['require_motion'] else 'NO'}")
+            print(f"{'='*60}\n")
         
         print(f"[OK] Security level changed to: {level.upper()}")
+    
+    def print_per_user_stats(self):
+        """Print per-user statistics summary to terminal."""
+        if not self.enable_reporting or not self.report_generator:
+            return
+        
+        print("\n" + "="*80)
+        print(f"PER-USER RECOGNITION STATISTICS (Session: {self.report_generator.session_id})")
+        print("="*80)
+        
+        # Get user stats from report generator
+        user_stats = self.report_generator.user_stats
+        
+        if not user_stats or len(user_stats) == 0:
+            print("No recognition attempts yet...")
+            print("="*80 + "\n")
+            return
+        
+        # Header
+        print(f"{'User':<15} {'Attempts':<10} {'Success':<10} {'Rate':<10} {'Avg Conf':<12} {'Avg Quality':<12}")
+        print("-"*80)
+        
+        # Per-user rows
+        for user_name, stats in sorted(user_stats.items()):
+            if user_name == "Unknown":
+                continue  # Skip unknown for now
+            
+            total = stats['total_attempts']
+            success = stats['successful_recognitions']
+            rate = (success / total * 100) if total > 0 else 0
+            
+            avg_conf = sum(stats['confidences']) / len(stats['confidences']) if stats['confidences'] else 0
+            avg_quality = sum(stats['quality_scores']) / len(stats['quality_scores']) if stats['quality_scores'] else 0
+            
+            print(f"{user_name:<15} {total:<10} {success:<10} {rate:<9.1f}% {avg_conf:<12.1f} {avg_quality:<12.2f}")
+        
+        # Unknown/rejected attempts
+        if "Unknown" in user_stats:
+            unknown_stats = user_stats["Unknown"]
+            print("-"*80)
+            print(f"{'[UNKNOWN/REJECTED]':<15} {unknown_stats['total_attempts']:<10} {'-':<10} {'-':<10} {'-':<12} {'-':<12}")
+        
+        # Overall summary
+        total_attempts = self.report_generator.total_attempts
+        total_success = sum(s['successful_recognitions'] for s in user_stats.values())
+        overall_rate = (total_success / total_attempts * 100) if total_attempts > 0 else 0
+        
+        print("="*80)
+        print(f"OVERALL: {total_attempts} attempts | {total_success} successful | {overall_rate:.1f}% success rate")
+        print("="*80 + "\n")
     
     def run(self):
         """Run the main loop."""
@@ -737,14 +844,37 @@ class LiveTestSystem:
                     self.perf_tracker.reset()
                     print("[OK] Statistics reset")
                 elif key == ord('g'):
-                    # Generate report
-                    print("\n[*] Generating test report...")
-                    timestamp = time.strftime("%Y%m%d_%H%M%S")
-                    report_name = f"live_test_{timestamp}"
-                    self.report_generator.generate_report(
-                        report_name=report_name,
-                        include_visualizations=True
-                    )
+                    # Generate report manually
+                    if self.enable_reporting and self.report_generator:
+                        print("\n[GENERATING REPORT...]")
+                        self.report_generator.generate_report(auto_save=False)
+                    else:
+                        print("\n[!] Report generation is currently disabled")
+                elif key == ord('a'):
+                    # Toggle anti-spoofing detection
+                    if self.recognizer and hasattr(self.recognizer, 'enable_antispoofing'):
+                        self.recognizer.enable_antispoofing = not self.recognizer.enable_antispoofing
+                        
+                        # Also toggle blink verification
+                        if hasattr(self.recognizer, 'enable_blink_verification'):
+                            self.recognizer.enable_blink_verification = self.recognizer.enable_antispoofing
+                        
+                        status = "ENABLED" if self.recognizer.enable_antispoofing else "DISABLED"
+                        print(f"\n{'='*70}")
+                        print(f"[ANTI-SPOOFING {status}]")
+                        print(f"{'='*70}")
+                        if not self.recognizer.enable_antispoofing:
+                            print("⚠️  WARNING: Anti-spoofing is now DISABLED")
+                            print("   All faces will be treated as REAL")
+                            print("   Blink detection disabled (no terminal output)")
+                            print("   System is vulnerable to photo/video attacks!")
+                        else:
+                            print("✅ Anti-spoofing protection is ACTIVE")
+                            print("   Photo/video/mask attacks will be detected")
+                            print("   Blink detection enabled")
+                        print(f"{'='*70}\n")
+                    else:
+                        print("\n[!] Anti-spoofing not available for this configuration")
                 elif key == ord(' '):
                     # Take screenshot
                     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -779,19 +909,10 @@ class LiveTestSystem:
         print(f"Average FPS: {stats['fps']:.1f}")
         print("=" * 70)
         
-        # Auto-generate final report
-        if self.enable_reporting and self.report_generator.session_data['total_frames'] > 0:
-            print("\n[*] Auto-generating final test report...")
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            report_name = f"session_{timestamp}"
-            try:
-                self.report_generator.generate_report(
-                    report_name=report_name,
-                    include_visualizations=True
-                )
-            except Exception as e:
-                print(f"[!] Report generation failed: {e}")
-                print("    (This is non-critical, session data can be reviewed from stats above)")
+        # Auto-generate final per-user report
+        if self.enable_reporting and self.report_generator:
+            print("\n")
+            self.report_generator.finalize_session()
 
 
 # ============================================================================

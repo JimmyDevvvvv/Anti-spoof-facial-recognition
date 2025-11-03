@@ -1,0 +1,53 @@
+{
+  "session_info": {
+    "session_id": "20251029_014105",
+    "start_time": "2025-10-29T01:41:05.446351",
+    "duration_seconds": 28.77,
+    "total_attempts": 400,
+    "unknown_attempts": 385
+  },
+  "per_user_details": {
+    "Person 22": {
+      "total_attempts": 15,
+      "successful_recognitions": 15,
+      "failed_attempts": 0,
+      "recognition_rate": 100.0,
+      "average_confidence": 47.98,
+      "confidence_range": {
+        "min": 42.87,
+        "max": 49.95
+      },
+      "average_quality_score": 0.85,
+      "average_processing_time_ms": 40.25,
+      "anti_spoofing": {
+        "total_checks": 15,
+        "real_detections": 15,
+        "spoof_detections": 0,
+        "detection_rate": 0.0,
+        "spoof_types": {}
+      },
+      "edge_cases": {
+        "low_quality_detections": 0,
+        "low_confidence_cases": 0,
+        "high_confidence_cases": 0
+      },
+      "sample_confidences": [
+        48.7,
+        49.28,
+        49.58,
+        49.95,
+        43.86,
+        48.58,
+        48.79,
+        42.87,
+        48.1,
+        49.17
+      ]
+    }
+  },
+  "summary": {
+    "total_users": 1,
+    "overall_accuracy": 100.0,
+    "total_spoofs_detected": 38
+  }
+}

@@ -41,8 +41,10 @@ import sys
 
 # Ensure console can render Unicode on Windows (PowerShell/cmd)
 try:
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')  # type: ignore
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')  # type: ignore
 except Exception:
     pass
 
@@ -258,7 +260,7 @@ class UltimateAntiSpoof:
         
         # Initialize MediaPipe Face Mesh (78 landmarks)
         if MEDIAPIPE_AVAILABLE:
-            self.face_mesh = mp.solutions.face_mesh.FaceMesh(
+            self.face_mesh = mp.solutions.face_mesh.FaceMesh(  # type: ignore
                 static_image_mode=not enable_video_mode,
                 max_num_faces=1,
                 refine_landmarks=True,
@@ -268,11 +270,12 @@ class UltimateAntiSpoof:
             self.landmark_method = "mediapipe"
         else:
             # Fallback to OpenCV
+            haar_path = cv2.data.haarcascades if hasattr(cv2.data, 'haarcascades') else ''  # type: ignore
             self.face_cascade = cv2.CascadeClassifier(
-                cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+                haar_path + 'haarcascade_frontalface_default.xml'
             )
             self.eye_cascade = cv2.CascadeClassifier(
-                cv2.data.haarcascades + 'haarcascade_eye.xml'
+                haar_path + 'haarcascade_eye.xml'
             )
             self.landmark_method = "opencv"
         
@@ -312,6 +315,10 @@ class UltimateAntiSpoof:
         # rPPG (blood flow) detection
         self.green_channel_history = []  # Track green channel for heartbeat
         self.rppg_buffer_size = 150  # 5 seconds at 30fps for reliable heartbeat
+        
+        # Rate limiting for terminal output (print every 5 seconds)
+        self.last_blink_print_time = 0.0
+        self.blink_print_interval = 5.0  # seconds
         
         # Statistics
         self.total_checks = 0
@@ -383,6 +390,10 @@ class UltimateAntiSpoof:
         
         # CONTINUOUS VALIDATION: Face detected - update presence time
         self.last_face_seen_time = current_time
+        
+        # Ensure face_bbox is not None before proceeding
+        if face_bbox is None:
+            return self._create_error_result("Face bbox not detected", start_time)
         
         # Perform all checks
         texture_score = self._check_texture(gray, face_bbox)
@@ -536,28 +547,38 @@ class UltimateAntiSpoof:
                     print(f"[DEBUG] ⚠ PHOTO OVERRIDE: {photo_indicators}")
         
         # CONTINUOUS VALIDATION: Check blink timeout (must blink every 10 seconds)
-        time_since_last_blink = current_time - self.last_blink_time
+        time_since_last_blink = current_time - self.last_blink_time if self.last_blink_time > 0 else 0
         
-        # CRITICAL: If no blink in last 10 seconds, ALWAYS mark as spoof (no flickering)
-        if time_since_last_blink > self.BLINK_TIMEOUT_SECONDS:
+        # CRITICAL: If blink is required and no blink in last 10 seconds, mark as spoof
+        # Only enforce timeout if blinks are required by the security level
+        if self.config['require_blink'] and time_since_last_blink > self.BLINK_TIMEOUT_SECONDS:
             # Validation expired - no blink in 10 seconds
             self.is_user_validated = False
             is_real = False
             warnings_list.append(f"⚠ VALIDATION EXPIRED: No blink for {time_since_last_blink:.1f}s (timeout: {self.BLINK_TIMEOUT_SECONDS}s)")
-            print(f"[VALIDATION EXPIRED] ❌ No blink for {time_since_last_blink:.1f}s - MARKING AS SPOOF")
+            # Rate-limited output
+            if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                self.last_blink_print_time = current_time
+                print(f"[VALIDATION EXPIRED] ❌ No blink for {time_since_last_blink:.1f}s - MARKING AS SPOOF")
             if self.debug:
                 print(f"[DEBUG] ⚠ VALIDATION EXPIRED: No blink for {time_since_last_blink:.1f}s")
         
         # Additional requirements - STRICT for photos, LENIENT for real faces
-        # ALWAYS print blink score for debugging
-        print(f"[BLINK CHECK] Score: {blink_score:.3f}, Required: {self.config['require_blink']}, Session blinks: {self.total_blinks_in_session}, Time since last blink: {time_since_last_blink:.1f}s")
+        # Print blink score for debugging (rate-limited to every 5 seconds)
+        if current_time - self.last_blink_print_time >= self.blink_print_interval:
+            self.last_blink_print_time = current_time
+            print(f"[BLINK CHECK] Score: {blink_score:.3f}, Required: {self.config['require_blink']}, Session blinks: {self.total_blinks_in_session}, Time since last blink: {time_since_last_blink:.1f}s")
         
         # Only check blink score if validation hasn't already expired
         if time_since_last_blink <= self.BLINK_TIMEOUT_SECONDS:
             if self.config['require_blink'] and blink_score < 0.5:  # STRICTER: Need actual blink detection
                 is_real = False
                 warnings_list.append("Blink detection failed - no eye movement detected (likely photo/screen)")
-                print(f"[DEBUG] ❌ BLINK REQUIREMENT FAILED: Score {blink_score:.3f} < 0.5 (Blinks: {self.total_blinks_in_session})")
+                # Rate-limited debug output
+                if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                    self.last_blink_print_time = current_time
+                    if self.debug:
+                        print(f"[DEBUG] ❌ BLINK REQUIREMENT FAILED: Score {blink_score:.3f} < 0.5 (Blinks: {self.total_blinks_in_session})")
                 if self.debug:
                     print(f"[DEBUG] Blink requirement failed: {blink_score:.3f} < 0.5")
         
@@ -692,7 +713,7 @@ class UltimateAntiSpoof:
         self,
         rgb: np.ndarray,
         gray: np.ndarray
-    ) -> Tuple[bool, Optional[any], Optional[Tuple]]:
+    ) -> Tuple[bool, Optional[object], Optional[Tuple]]:
         """Detect face and extract landmarks."""
         if self.landmark_method == "mediapipe":
             results = self.face_mesh.process(rgb)
@@ -914,7 +935,7 @@ class UltimateAntiSpoof:
                     # CRITICAL: Use AVERAGE motion over time period
                     # This prevents single-frame fluctuations from fooling the system
                     if len(self.motion_history) >= 30:  # At least 1 second
-                        avg_motion = np.mean(self.motion_history)
+                        avg_motion = float(np.mean(self.motion_history))
                         if self.debug:
                             print(f"[DEBUG Motion] Avg over {len(self.motion_history)} frames: {avg_motion:.3f}")
                         return avg_motion
@@ -931,9 +952,9 @@ class UltimateAntiSpoof:
             else:
                 prev = self.previous_frame
             
-            # Optical flow
+            # Optical flow - suppress type error for flow parameter
             flow = cv2.calcOpticalFlowFarneback(
-                prev, gray, None,
+                prev, gray, flow=None,  # type: ignore[arg-type]
                 pyr_scale=0.5, levels=3, winsize=15,
                 iterations=3, poly_n=5, poly_sigma=1.2, flags=0
             )
@@ -1275,7 +1296,11 @@ class UltimateAntiSpoof:
                             self.is_user_validated = True
                             print(f"[VALIDATION RESTORED] ✓ User re-validated with blink")
                         
-                        print(f"[BLINK DETECTED] Duration: {blink_duration*1000:.0f}ms, Frames: {self.ear_consecutive_low}, Total: {self.blink_counter}, Session: {self.total_blinks_in_session}")
+                        # Print blink detection (rate-limited to every 5 seconds)
+                        if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                            self.last_blink_print_time = current_time
+                            print(f"[BLINK DETECTED] Duration: {blink_duration*1000:.0f}ms, Frames: {self.ear_consecutive_low}, Total: {self.blink_counter}, Session: {self.total_blinks_in_session}")
+                        
                         if self.debug:
                             print(f"[DEBUG] ✓ COMPLETE BLINK! Duration: {blink_duration*1000:.0f}ms, Frames: {self.ear_consecutive_low}, Validated: {self.is_user_validated}")
                     
@@ -1292,7 +1317,10 @@ class UltimateAntiSpoof:
                 else:
                     score = 0.1  # FAIL - no blinks yet (photos can't blink)
                 
-                print(f"[BLINK EARLY] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Score: {score:.3f}")
+                # Rate-limited debug output
+                if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                    self.last_blink_print_time = current_time
+                    print(f"[BLINK EARLY] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Score: {score:.3f}")
                 return score
             else:
                 blink_freq = self.blink_counter / session_duration
@@ -1311,7 +1339,10 @@ class UltimateAntiSpoof:
                     # No blinks after 3+ seconds - PHOTO
                     score = 0.0
                 
-                print(f"[BLINK LATE] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Freq: {blink_freq:.3f}, Score: {score:.3f}")
+                # Rate-limited debug output
+                if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                    self.last_blink_print_time = current_time
+                    print(f"[BLINK LATE] Duration: {session_duration:.2f}s, Blinks: {self.blink_counter}, Freq: {blink_freq:.3f}, Score: {score:.3f}")
                 return score
         
         except Exception as e:
@@ -1351,7 +1382,7 @@ class UltimateAntiSpoof:
             left_ear = get_ear(left_indices)
             right_ear = get_ear(right_indices)
             
-            return (left_ear + right_ear) / 2.0
+            return float((left_ear + right_ear) / 2.0)
             
         except Exception as e:
             if self.debug:
@@ -1775,7 +1806,7 @@ class UltimateAntiSpoof:
             scores[AttackType.DEEPFAKE] = 0.5
         
         if scores:
-            attack = max(scores, key=scores.get)
+            attack = max(scores.items(), key=lambda x: x[1])[0]
             confidence = scores[attack]
         else:
             attack = AttackType.UNKNOWN

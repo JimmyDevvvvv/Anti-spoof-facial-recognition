@@ -27,6 +27,17 @@
 - **Absentee Tracking** - Real-time absentee monitoring
 - **Settings Panel** - Configure working days, thresholds, and notifications
 
+### 📈 Per-User Reporting System (NEW!)
+- **Automatic Report Generation** - Detailed reports generated after every session
+- **Per-User Statistics** - Individual metrics for each recognized user
+- **Real-time Tracking** - Every recognition attempt logged with full details
+- **Anti-Spoofing Metrics** - Track spoof detection rates per user
+- **Multiple Export Formats** - JSON and human-readable text reports
+- **Persistent Storage** - SQLite database with complete session history
+- **Auto-Save Feature** - Periodic auto-saves every 50 attempts
+
+📚 **[View Complete Per-User Reporting Documentation →](docs/PER_USER_REPORTING.md)**
+
 ## 🚀 Quick Start
 
 ### 1. Installation
@@ -118,13 +129,19 @@ python full-test.py
 # ✅ Recognize people
 # ✅ Automatically log attendance
 # ✅ Update web dashboard
+# ✅ Generate detailed per-user reports (NEW!)
 
 # Controls:
-# - Q or ESC: Quit
+# - Q or ESC: Quit (auto-generates final report)
+# - G: Generate report immediately
 # - S: Screenshot
 # - D: Toggle debug info
 # - H: Toggle statistics
 # - C: Toggle controls
+
+# Reports saved to: reports/
+# - user_report_[session_id].json
+# - user_report_[session_id].txt
 ```
 
 ### Step 5: Monitor Attendance

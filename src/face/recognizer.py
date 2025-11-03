@@ -94,8 +94,9 @@ class FaceRecognizer:
     MIN_TRAINING_SAMPLES = 1
     MAX_CONFIDENCE_HISTORY = 10
     MAX_QUALITY_HISTORY = 5
-    MAX_LABEL_HISTORY = 5
+    MIN_SAMPLES_FOR_RECOGNITION = 5  # Require 5 consecutive frames before recognizing
     CONFIDENCE_STABILITY_THRESHOLD = 15.0
+    PERSON_SWITCH_THRESHOLD = 15.0  # New person must be 15 points better to switch
     
     # Quality thresholds - WEBCAM OPTIMIZED
     MIN_QUALITY_THRESHOLD = 0.30  # Lowered for webcam quality
@@ -171,9 +172,13 @@ class FaceRecognizer:
         self.required_blinks = required_blinks
         self.blink_window = blink_window
         
+        # Rate limiting for blink terminal output (print every 5 seconds)
+        self.last_blink_print_time = 0.0
+        self.blink_print_interval = 5.0  # seconds
+        
         # Create LBPH recognizer
         # Note: Don't pass threshold to LBPH - we handle thresholding after prediction
-        self.recognizer = cv2.face.LBPHFaceRecognizer_create(
+        self.recognizer = cv2.face.LBPHFaceRecognizer_create(  # type: ignore
             radius=radius,
             neighbors=neighbors,
             grid_x=grid_x,
@@ -191,18 +196,22 @@ class FaceRecognizer:
         self.name_to_label: Dict[str, int] = {}
         self.is_trained = False
         
-        # Temporal smoothing and stabilization
-        self._confidence_history: List[float] = []
-        self._quality_history: List[float] = []
-        self._label_history: List[int] = []
-        self._last_stable_confidence: Optional[float] = None
+        # Temporal smoothing and stabilization - PER PERSON
+        self._confidence_history_per_label: Dict[int, List[float]] = {}  # Confidence history per label
+        self._quality_history_per_label: Dict[int, List[float]] = {}  # Quality history per label
+        self._last_stable_confidence_per_label: Dict[int, float] = {}  # Last stable confidence per label
         
-        # Blink verification tracking
-        self._blink_timestamps: List[float] = []  # Timestamps of detected blinks
-        self._session_start_time: float = 0.0  # When recognition session started
-        self._last_blink_check_time: float = 0.0  # Last time we checked for blinks
-        self._blink_verified: bool = False  # Whether blinks have been verified
-        self._verification_in_progress: bool = False  # Whether we're actively verifying
+        # Person stability tracking - ANTI-FLICKER
+        self._current_person_label: Optional[int] = None  # Currently recognized person
+        self._current_person_confidence: float = float('inf')  # Current person's best confidence
+        self._consecutive_frames_per_label: Dict[int, int] = {}  # Consecutive frames per person
+        
+        # Blink verification tracking - PER PERSON
+        self._blink_timestamps_per_label: Dict[int, List[float]] = {}  # Blink timestamps per label
+        self._session_start_per_label: Dict[int, float] = {}  # Session start time per label
+        self._last_blink_check_per_label: Dict[int, float] = {}  # Last check time per label
+        self._blink_verified_per_label: Dict[int, bool] = {}  # Verification status per label
+        self._verification_in_progress_per_label: Dict[int, bool] = {}  # Verification in progress per label
 
     @staticmethod
     def _validate_parameters(
@@ -255,7 +264,7 @@ class FaceRecognizer:
         face_samples: List[np.ndarray],
         labels: List[int],
         label_names: Optional[Dict[int, str]] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, object]:
         """
         Train the face recognition model with provided samples.
         
@@ -335,11 +344,15 @@ class FaceRecognizer:
             elif face_area > 20000:  # Large face (very close)
                 return self._preprocess_large_face(gray)
             else:  # Medium face (optimal distance)
-                return self.preprocessor.preprocess(sample, align=False, equalize=True)
+                if self.preprocessor:
+                    return self.preprocessor.preprocess(sample, align=False, equalize=True)
+                return cv2.resize(gray, self.DEFAULT_FACE_SIZE)
                 
         except Exception as e:
             warnings.warn(f"Distance-adaptive preprocessing failed: {e}", RuntimeWarning)
-            return self.preprocessor.preprocess(sample, align=False, equalize=True)
+            if self.preprocessor:
+                return self.preprocessor.preprocess(sample, align=False, equalize=True)
+            return cv2.resize(sample, self.DEFAULT_FACE_SIZE)
 
     def _preprocess_small_face(self, gray: np.ndarray) -> np.ndarray:
         """Enhanced preprocessing for small faces (far away)."""
@@ -402,7 +415,7 @@ class FaceRecognizer:
         face_samples: List[np.ndarray],
         labels: List[int],
         label_names: Optional[Dict[int, str]] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, object]:
         """
         Update existing model with new training samples (incremental learning).
         
@@ -472,9 +485,14 @@ class FaceRecognizer:
         label, confidence = self.recognizer.predict(processed_image)
         
         # Convert label to name if mapping exists
-        result_label = self.label_to_name.get(label, label)
+        result_label = self.label_to_name.get(label, label) if label in self.label_to_name else label  # type: ignore[assignment]
         
-        return (result_label, confidence) if return_confidence else result_label
+        # Ensure confidence is always a float
+        confidence_float = float(confidence) if confidence is not None else float('inf')
+        
+        if return_confidence:
+            return (result_label, confidence_float)  # type: ignore[return-value]
+        return result_label  # type: ignore[return-value]
 
     def predict_with_name(self, face_image: np.ndarray) -> RecognitionResult:
         """
@@ -505,6 +523,7 @@ class FaceRecognizer:
         # Stage 1: Anti-spoofing detection (if enabled)
         liveness_result = None
         is_live = True
+        detected_blink_for_label = None  # Track which label had a blink
         
         if self.enable_antispoofing and self.antispoofing_detector is not None:
             try:
@@ -519,28 +538,17 @@ class FaceRecognizer:
                         # More lenient threshold - consider any blink indication
                         if blink_score > 0.3:  # Lowered from 0.7 for better detection
                             import time
-                            self._record_blink(time.time())
-                            if self.enable_blink_verification:
-                                print(f"  [Blink detected] Score: {blink_score:.2f}")
+                            # Don't record blink yet - we need to know which person it is first
+                            detected_blink_for_label = time.time()
+                            # Rate-limited output
+                            if self.enable_blink_verification and (detected_blink_for_label - self.last_blink_print_time >= self.blink_print_interval):
+                                self.last_blink_print_time = detected_blink_for_label
+                                print(f"  [Blink detected] Score: {blink_score:.2f} | Pending user assignment...")
                 
                 if not is_live and self.reject_on_spoof:
                     return self._create_spoof_result(liveness_result)
             except Exception as e:
                 print(f"Warning: Anti-spoofing check failed: {e}")
-        
-        # Stage 1.5: Verify blink timing (advisory layer - warns but doesn't reject)
-        import time
-        current_time = time.time()
-        blink_warning = None
-        
-        if self.enable_blink_verification:
-            blink_valid, blink_reason = self._verify_blink_timing(current_time)
-            
-            if not blink_valid:
-                # Log warning but don't reject - blink detection is experimental
-                blink_warning = f"Blink verification warning: {blink_reason}"
-                print(f"  ⚠️  {blink_warning}")
-                # Continue with recognition instead of rejecting
         
         # Stage 2: Lighting normalization
         normalized_face = self._normalize_lighting(face_image)
@@ -554,12 +562,52 @@ class FaceRecognizer:
             return self._create_unknown_result(quality_score, lighting_metrics, liveness_result, is_live)
         
         # Stage 5: Perform recognition
-        label, confidence = self.predict(normalized_face, return_confidence=True)
+        prediction_result = self.predict(normalized_face, return_confidence=True)
+        
+        # Ensure we have valid types from prediction
+        if isinstance(prediction_result, tuple):
+            # predict returned (label, confidence)
+            label, confidence = prediction_result
+            confidence = float(confidence) if confidence is not None else float('inf')
+        else:
+            # predict returned just label
+            label = prediction_result
+            confidence = float('inf')
+        
         label_id, name = self._resolve_label(label)
+        
+        # NOW that we know the label, record the blink for THIS specific person
+        import time
+        current_time = time.time()
+        if detected_blink_for_label is not None:
+            self._record_blink(label_id, detected_blink_for_label)
+            # Get blink count for this user
+            user_blink_count = len(self._blink_timestamps_per_label.get(label_id, []))
+            # Rate-limited output
+            if self.enable_blink_verification and (current_time - self.last_blink_print_time >= self.blink_print_interval):
+                self.last_blink_print_time = current_time
+                print(f"  [✓ Blink] User: {name} | Total blinks for {name}: {user_blink_count} | Time: {detected_blink_for_label:.2f}")
+        
+        # Stage 5.5: Verify blink timing FOR THIS SPECIFIC PERSON (advisory layer)
+        blink_warning = None
+        
+        if self.enable_blink_verification:
+            blink_valid, blink_reason = self._verify_blink_timing(label_id, current_time)
+            
+            if not blink_valid:
+                # Log warning but don't reject - blink detection is experimental
+                blink_warning = f"Blink verification warning for {name}: {blink_reason}"
+                # Rate-limited output
+                if current_time - self.last_blink_print_time >= self.blink_print_interval:
+                    self.last_blink_print_time = current_time
+                    print(f"  ⚠️  {blink_warning}")
+                # Continue with recognition instead of rejecting
         
         # Stage 6: Apply confidence smoothing with distance adaptation
         face_size = (normalized_face.shape[1], normalized_face.shape[0])  # (width, height)
-        smoothed_confidence = self._smooth_confidence(confidence, quality_score, label_id, face_size)
+        # Ensure confidence is float before smoothing
+        confidence_float = float(confidence) if confidence is not None else float('inf')
+        smoothed_confidence = self._smooth_confidence(confidence_float, quality_score, label_id, face_size)
         
         # Stage 7: Adjust confidence based on liveness result
         if liveness_result and not is_live:
@@ -610,7 +658,7 @@ class FaceRecognizer:
             threshold=self.threshold,
             quality_score=quality_score,
             lighting_metrics=lighting_metrics,
-            liveness_result=liveness_result,
+            liveness_result=liveness_result,  # type: ignore
             is_live=is_live
         )
     
@@ -674,7 +722,9 @@ class FaceRecognizer:
             normalized = np.uint8(normalized)
             
             # Histogram stretching to full range
-            normalized = self._stretch_histogram(normalized)
+            # Cast to array to avoid scalar type issues
+            normalized_array = np.asarray(normalized, dtype=np.uint8)
+            normalized = self._stretch_histogram(normalized_array)
             
             # Gaussian blur to reduce noise while preserving features
             normalized = cv2.GaussianBlur(normalized, (3, 3), 0)
@@ -695,11 +745,18 @@ class FaceRecognizer:
     @staticmethod
     def _stretch_histogram(image: np.ndarray) -> np.ndarray:
         """Stretch histogram to full 0-255 range."""
-        min_val = np.min(image)
-        max_val = np.max(image)
+        # Ensure image is numpy array, not uint8 scalar
+        if not isinstance(image, np.ndarray):
+            return np.array(image, dtype=np.uint8)
+        
+        # Convert to float for calculations
+        img_float = image.astype(float)
+        min_val = np.min(img_float)
+        max_val = np.max(img_float)
         
         if max_val > min_val:
-            return ((image - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+            stretched = ((img_float - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+            return stretched
         return image
 
     def _assess_lighting_condition(self, face_image: np.ndarray) -> LightingMetrics:
@@ -897,15 +954,15 @@ class FaceRecognizer:
         face_size: Optional[Tuple[int, int]] = None
     ) -> float:
         """
-        Advanced confidence smoothing with temporal consistency and distance adaptation.
+        Advanced confidence smoothing with temporal consistency and distance adaptation - PER PERSON.
         
         Implements:
         - Weighted moving average (recent samples weighted more)
         - Median filtering for outlier rejection
-        - Label consistency tracking
         - Temporal stability enforcement
         - Quality-based adjustment
         - Distance-adaptive confidence adjustment
+        - SEPARATE tracking for each person (label_id)
         
         Args:
             confidence: Raw confidence score
@@ -916,36 +973,42 @@ class FaceRecognizer:
         Returns:
             Stabilized confidence score
         """
-        # Update histories
-        self._confidence_history.append(confidence)
-        self._quality_history.append(quality_score)
-        self._label_history.append(label)
+        # Initialize per-person tracking if needed
+        if label not in self._confidence_history_per_label:
+            self._confidence_history_per_label[label] = []
+            self._quality_history_per_label[label] = []
+            # Don't initialize last_stable_confidence yet - will be set after first smoothing
         
-        # Maintain history size limits
-        self._trim_history()
+        # Update histories FOR THIS PERSON ONLY
+        self._confidence_history_per_label[label].append(confidence)
+        self._quality_history_per_label[label].append(quality_score)
+        
+        # Maintain history size limits FOR THIS PERSON
+        self._trim_history_for_label(label)
+        
+        # Get this person's history
+        conf_history = self._confidence_history_per_label[label]
+        qual_history = self._quality_history_per_label[label]
         
         # Need at least 3 samples for proper smoothing
-        if len(self._confidence_history) < 3:
+        if len(conf_history) < 3:
             return confidence
         
-        # Calculate weighted moving average
-        weights = np.linspace(0.3, 1.0, len(self._confidence_history))
-        weighted_conf = float(np.average(self._confidence_history, weights=weights))
+        # Calculate weighted moving average FOR THIS PERSON
+        weights = np.linspace(0.3, 1.0, len(conf_history))
+        weighted_conf = float(np.average(conf_history, weights=weights))
         
-        # Calculate median for outlier rejection
-        median_conf = float(np.median(self._confidence_history))
+        # Calculate median for outlier rejection FOR THIS PERSON
+        median_conf = float(np.median(conf_history))
         
-        # Check label consistency
-        label_consistency = self._check_label_consistency()
-        
-        # Apply temporal stability
-        smoothed_conf = self._apply_temporal_stability(weighted_conf)
+        # Apply temporal stability FOR THIS PERSON
+        smoothed_conf = self._apply_temporal_stability_for_label(weighted_conf, label)
         
         # Reject outliers using median
         smoothed_conf = self._reject_outliers(smoothed_conf, median_conf)
         
         # Quality-based adjustment - OPTIMIZED for better confidence
-        smoothed_conf = self._apply_quality_adjustment(smoothed_conf)
+        smoothed_conf = self._apply_quality_adjustment_for_label(smoothed_conf, label)
         
         # Distance-adaptive confidence adjustment
         if face_size is not None:
@@ -955,11 +1018,11 @@ class FaceRecognizer:
         if quality_score > self.HIGH_QUALITY_THRESHOLD:
             smoothed_conf *= 0.9  # Less aggressive reduction to prevent false positives
         
-        # Label consistency bonus - CONSERVATIVE
-        if label_consistency:
+        # Label consistency bonus - CONSERVATIVE (check last 3 of THIS PERSON)
+        if len(conf_history) >= 3:
             smoothed_conf = (
                 smoothed_conf * 0.8 + 
-                np.mean(self._confidence_history[-3:]) * 0.2
+                np.mean(conf_history[-3:]) * 0.2
             )
             # Less aggressive additional reduction for consistent recognition
             smoothed_conf *= 0.95
@@ -967,51 +1030,45 @@ class FaceRecognizer:
         # Final bounds checking
         smoothed_conf = max(0.0, min(smoothed_conf, 200.0))
         
-        # Update stable confidence
-        self._last_stable_confidence = smoothed_conf
+        # Update stable confidence FOR THIS PERSON
+        self._last_stable_confidence_per_label[label] = float(smoothed_conf)
         
-        return smoothed_conf
-
-    def _trim_history(self) -> None:
-        """Trim history lists to maximum size."""
-        if len(self._confidence_history) > self.MAX_CONFIDENCE_HISTORY:
-            self._confidence_history.pop(0)
-        if len(self._quality_history) > self.MAX_QUALITY_HISTORY:
-            self._quality_history.pop(0)
-        if len(self._label_history) > self.MAX_LABEL_HISTORY:
-            self._label_history.pop(0)
-
-    def _check_label_consistency(self) -> bool:
-        """Check if recent labels are consistent (same person)."""
-        if len(self._label_history) < 3:
-            return True
-        return len(set(self._label_history[-3:])) == 1
-
-    def _apply_temporal_stability(self, weighted_conf: float) -> float:
-        """Apply temporal stability constraints."""
-        if self._last_stable_confidence is None:
-            return weighted_conf
-        
-        change_magnitude = abs(weighted_conf - self._last_stable_confidence)
-        
-        if change_magnitude > self.CONFIDENCE_STABILITY_THRESHOLD:
-            # Large change detected - use conservative smoothing
-            return weighted_conf * 0.3 + self._last_stable_confidence * 0.7
-        
-        return weighted_conf
-
+        return float(smoothed_conf)
+    
     def _reject_outliers(self, smoothed_conf: float, median_conf: float) -> float:
         """Reject outlier confidence values using median."""
         if abs(smoothed_conf - median_conf) > 20:
             return smoothed_conf * 0.4 + median_conf * 0.6
         return smoothed_conf
 
-    def _apply_quality_adjustment(self, smoothed_conf: float) -> float:
-        """Adjust confidence based on average quality - CONSERVATIVE."""
-        if not self._quality_history:
+    def _trim_history_for_label(self, label: int) -> None:
+        """Trim history lists to maximum size for a specific person."""
+        if len(self._confidence_history_per_label[label]) > self.MAX_CONFIDENCE_HISTORY:
+            self._confidence_history_per_label[label].pop(0)
+        if len(self._quality_history_per_label[label]) > self.MAX_QUALITY_HISTORY:
+            self._quality_history_per_label[label].pop(0)
+
+    def _apply_temporal_stability_for_label(self, weighted_conf: float, label: int) -> float:
+        """Apply temporal stability constraints for a specific person."""
+        last_stable = self._last_stable_confidence_per_label.get(label, None)
+        if last_stable is None:
+            return weighted_conf
+        
+        change_magnitude = abs(weighted_conf - last_stable)
+        
+        if change_magnitude > self.CONFIDENCE_STABILITY_THRESHOLD:
+            # Large change detected - use conservative smoothing
+            return weighted_conf * 0.3 + last_stable * 0.7
+        
+        return weighted_conf
+
+    def _apply_quality_adjustment_for_label(self, smoothed_conf: float, label: int) -> float:
+        """Adjust confidence based on average quality for a specific person - CONSERVATIVE."""
+        qual_history = self._quality_history_per_label.get(label, [])
+        if not qual_history:
             return smoothed_conf
         
-        avg_quality = np.mean(self._quality_history)
+        avg_quality = np.mean(qual_history)
         
         if avg_quality > self.HIGH_QUALITY_THRESHOLD:
             return smoothed_conf * 0.9  # Less aggressive reduction to prevent false positives
@@ -1084,10 +1141,10 @@ class FaceRecognizer:
         label_id: int
     ) -> bool:
         """
-        Multi-stage recognition evaluation with STRICT anti-false-positive protection.
+        Multi-stage recognition evaluation with ULTRA-STRICT anti-false-positive and anti-flicker protection.
         
         Args:
-            confidence: Smoothed confidence score
+            confidence: Smoothed confidence score (LBPH: lower = better match)
             threshold: Adaptive threshold
             quality_score: Face quality score
             label_id: Predicted label ID
@@ -1095,40 +1152,78 @@ class FaceRecognizer:
         Returns:
             True if face should be recognized, False otherwise
         """
-        # Stage 1: Primary threshold check
+        # Stage 1: Confidence cutoff - reject if confidence > 50 (balanced for unknowns)
+        # In LBPH, lower confidence means better match
+        # Confidence > 50 means poor match, likely different person or unknown
+        # This prevents false positives like recognizing random people as known users
+        if confidence > 50:
+            return False
+        
+        # Stage 2: Primary threshold check
         if confidence >= threshold:
             return False
         
-        # Stage 2: Ultra-strict confidence bound - WEBCAM OPTIMIZED
-        if confidence > 100:  # More lenient for webcam variations
+        # Stage 3: Ultra-strict confidence bound
+        if confidence > 100:
             return False
         
-        # Stage 3: Reject uncertain range - WEBCAM OPTIMIZED
-        if 90 <= confidence <= 110:  # More lenient uncertain range
+        # Stage 4: Reject uncertain range
+        if 90 <= confidence <= 110:
             return False
         
-        # Stage 4: Quality-based rejection for high confidence - WEBCAM OPTIMIZED
-        if confidence > 95 and quality_score < 0.40:  # More lenient quality requirement
+        # Stage 5: Quality-based rejection for high confidence
+        if confidence > 45 and quality_score < 0.50:  # Quality requirement for borderline cases
             return False
         
-        # Stage 5: Reject very high confidence (likely false positive) - WEBCAM OPTIMIZED
-        if confidence > 120:  # Much more lenient high confidence threshold
+        # Stage 6: Minimum quality requirement
+        if quality_score < 0.30:  # More lenient quality threshold
             return False
         
-        # Stage 6: Minimum quality requirement - WEBCAM OPTIMIZED
-        if quality_score < 0.25:  # More lenient minimum quality for webcam
+        # Stage 7: Anti-flicker - require minimum samples before recognizing NEW person
+        conf_history = self._confidence_history_per_label.get(label_id, [])
+        if len(conf_history) < self.MIN_SAMPLES_FOR_RECOGNITION:
+            # Not enough samples for this person yet
             return False
+        
+        # Stage 8: Anti-flicker - if we have a current person, require significant improvement to switch
+        if self._current_person_label is not None and self._current_person_label != label_id:
+            # Trying to switch to a different person
+            # New person must be SIGNIFICANTLY better (lower confidence = better)
+            if confidence > (self._current_person_confidence - self.PERSON_SWITCH_THRESHOLD):
+                # New person is not significantly better - stay with current person
+                return False
+        
+        # Stage 9: Update consecutive frames counter
+        if label_id not in self._consecutive_frames_per_label:
+            self._consecutive_frames_per_label[label_id] = 0
+        self._consecutive_frames_per_label[label_id] += 1
+        
+        # Reset other people's consecutive frames
+        for other_label in list(self._consecutive_frames_per_label.keys()):
+            if other_label != label_id:
+                self._consecutive_frames_per_label[other_label] = 0
+        
+        # Stage 10: Require consecutive frames for NEW person (not current)
+        if self._current_person_label is not None and self._current_person_label != label_id:
+            # Switching to new person - require 3 consecutive frames
+            if self._consecutive_frames_per_label[label_id] < 3:
+                return False
+        
+        # All checks passed - update current person tracking
+        self._current_person_label = label_id
+        self._current_person_confidence = min(confidence, self._current_person_confidence) if label_id == self._current_person_label else confidence
         
         return True
     
-    def _verify_blink_timing(self, current_time: float) -> Tuple[bool, str]:
+    def _verify_blink_timing(self, label_id: int, current_time: float) -> Tuple[bool, str]:
         """
-        Verify that blinks occur within acceptable time intervals.
+        Verify that blinks occur within acceptable time intervals FOR A SPECIFIC PERSON.
         
         LENIENT MODE: This is advisory only - warns but doesn't reject.
         Blink detection is experimental and may have false positives.
         
         Args:
+            label_id: The label ID of the person being verified
             current_time: Current timestamp in seconds
             
         Returns:
@@ -1136,14 +1231,16 @@ class FaceRecognizer:
         """
         import time
         
-        # Initialize session if needed
-        if self._session_start_time == 0.0:
-            self._session_start_time = current_time
-            self._last_blink_check_time = current_time
-            self._blink_verified = False
-            self._verification_in_progress = True
+        # Initialize per-person tracking if needed
+        if label_id not in self._session_start_per_label:
+            self._session_start_per_label[label_id] = current_time
+            self._last_blink_check_per_label[label_id] = current_time
+            self._blink_verified_per_label[label_id] = False
+            self._verification_in_progress_per_label[label_id] = True
+            self._blink_timestamps_per_label[label_id] = []
         
-        session_duration = current_time - self._session_start_time
+        session_duration = current_time - self._session_start_per_label[label_id]
+        blink_timestamps = self._blink_timestamps_per_label.get(label_id, [])
         
         # If we're using the UltimateAntiSpoof detector, it handles blinks internally
         if self.antispoofing_detector is not None:
@@ -1151,22 +1248,23 @@ class FaceRecognizer:
             return True, "Blink verification delegated to UltimateAntiSpoof"
         
         # LENIENT: If no blinks detected yet and still early, just return OK
-        if len(self._blink_timestamps) == 0 and session_duration < self.blink_window:
-            return True, f"Waiting for blinks... ({session_duration:.1f}s / {self.blink_window:.1f}s)"
+        if len(blink_timestamps) == 0 and session_duration < self.blink_window:
+            return True, f"Waiting for blinks for this person... ({session_duration:.1f}s / {self.blink_window:.1f}s)"
         
         # Clean up old blink timestamps outside the verification window
-        self._blink_timestamps = [
-            ts for ts in self._blink_timestamps 
+        self._blink_timestamps_per_label[label_id] = [
+            ts for ts in blink_timestamps 
             if current_time - ts <= self.blink_window
         ]
+        blink_timestamps = self._blink_timestamps_per_label[label_id]
         
         # Check if we're still in the verification window
         if session_duration < self.blink_window:
             # Still collecting blinks
-            if len(self._blink_timestamps) >= self.required_blinks:
+            if len(blink_timestamps) >= self.required_blinks:
                 # LENIENT: Only warn about very suspicious patterns, don't reject minor issues
-                for i in range(1, len(self._blink_timestamps)):
-                    interval = self._blink_timestamps[i] - self._blink_timestamps[i-1]
+                for i in range(1, len(blink_timestamps)):
+                    interval = blink_timestamps[i] - blink_timestamps[i-1]
                     
                     # Only flag extremely suspicious patterns (very strict thresholds)
                     if interval < 0.3:  # Impossibly fast (< 300ms)
@@ -1174,49 +1272,69 @@ class FaceRecognizer:
                     
                     # Don't check max interval - too unreliable
                 
-                self._blink_verified = True
-                return True, f"✓ Blink timing OK ({len(self._blink_timestamps)} blinks detected)"
+                self._blink_verified_per_label[label_id] = True
+                return True, f"✓ Blink timing OK for this person ({len(blink_timestamps)} blinks detected)"
             else:
                 # Still collecting, not enough blinks yet - this is OK
-                return True, f"Collecting blinks ({len(self._blink_timestamps)}/{self.required_blinks}) - {session_duration:.1f}s elapsed"
+                return True, f"Collecting blinks for this person ({len(blink_timestamps)}/{self.required_blinks}) - {session_duration:.1f}s elapsed"
         else:
             # Verification window expired - LENIENT: Don't fail, just note it
-            if not self._blink_verified:
-                if len(self._blink_timestamps) < self.required_blinks:
+            if not self._blink_verified_per_label.get(label_id, False):
+                if len(blink_timestamps) < self.required_blinks:
                     # LENIENT: Just warn, don't reject
-                    return True, f"⚠️ Only {len(self._blink_timestamps)}/{self.required_blinks} blinks in {self.blink_window}s (advisory only)"
+                    return True, f"⚠️ Only {len(blink_timestamps)}/{self.required_blinks} blinks for this person in {self.blink_window}s (advisory only)"
             
-            return True, "✓ Verification complete" if self._blink_verified else "⚠️ Insufficient data (advisory only)"
+            return True, "✓ Verification complete" if self._blink_verified_per_label.get(label_id, False) else "⚠️ Insufficient data (advisory only)"
     
-    def _record_blink(self, current_time: float) -> None:
+    def _record_blink(self, label_id: int, current_time: float) -> None:
         """
-        Record a detected blink with timestamp.
+        Record a detected blink with timestamp FOR A SPECIFIC PERSON.
         
         Args:
+            label_id: The label ID of the person who blinked
             current_time: Timestamp when blink was detected
         """
-        self._blink_timestamps.append(current_time)
+        # Initialize tracking for this label if needed
+        if label_id not in self._blink_timestamps_per_label:
+            self._blink_timestamps_per_label[label_id] = []
+        
+        self._blink_timestamps_per_label[label_id].append(current_time)
         
         # Keep only recent blinks within the verification window
-        self._blink_timestamps = [
-            ts for ts in self._blink_timestamps 
+        self._blink_timestamps_per_label[label_id] = [
+            ts for ts in self._blink_timestamps_per_label[label_id] 
             if current_time - ts <= self.blink_window
         ]
     
     def reset_blink_verification(self) -> None:
-        """Reset blink verification state for a new session."""
-        self._blink_timestamps.clear()
-        self._session_start_time = 0.0
-        self._last_blink_check_time = 0.0
-        self._blink_verified = False
-        self._verification_in_progress = False
+        """Reset blink verification state for ALL people (start new session)."""
+        self._blink_timestamps_per_label.clear()
+        self._session_start_per_label.clear()
+        self._last_blink_check_per_label.clear()
+        self._blink_verified_per_label.clear()
+        self._verification_in_progress_per_label.clear()
+    
+    def reset_blink_verification_for_person(self, label_id: int) -> None:
+        """Reset blink verification state for a specific person."""
+        if label_id in self._blink_timestamps_per_label:
+            del self._blink_timestamps_per_label[label_id]
+        if label_id in self._session_start_per_label:
+            del self._session_start_per_label[label_id]
+        if label_id in self._last_blink_check_per_label:
+            del self._last_blink_check_per_label[label_id]
+        if label_id in self._blink_verified_per_label:
+            del self._blink_verified_per_label[label_id]
+        if label_id in self._verification_in_progress_per_label:
+            del self._verification_in_progress_per_label[label_id]
 
     def reset_confidence_history(self) -> None:
         """Reset confidence smoothing history and blink verification for a fresh start."""
-        self._confidence_history.clear()
-        self._quality_history.clear()
-        self._label_history.clear()
-        self._last_stable_confidence = None
+        self._confidence_history_per_label.clear()
+        self._quality_history_per_label.clear()
+        self._last_stable_confidence_per_label.clear()
+        self._current_person_label = None
+        self._current_person_confidence = float('inf')
+        self._consecutive_frames_per_label.clear()
         self.reset_blink_verification()
 
     def save_model(
@@ -1282,7 +1400,7 @@ class FaceRecognizer:
         self,
         model_path: Union[str, Path],
         metadata_path: Optional[Union[str, Path]] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, object]:
         """
         Load a pre-trained model from file.
         
@@ -1377,7 +1495,7 @@ class FaceRecognizer:
         """
         return self.label_to_name.copy()
 
-    def get_model_info(self) -> Dict[str, any]:
+    def get_model_info(self) -> Dict[str, object]:
         """
         Get comprehensive model information and statistics.
         
@@ -1400,9 +1518,9 @@ class FaceRecognizer:
                 'reject_on_spoof': self.reject_on_spoof
             },
             'history_sizes': {
-                'confidence': len(self._confidence_history),
-                'quality': len(self._quality_history),
-                'label': len(self._label_history)
+                'tracked_people': len(self._confidence_history_per_label),
+                'total_confidence_samples': sum(len(h) for h in self._confidence_history_per_label.values()),
+                'total_quality_samples': sum(len(h) for h in self._quality_history_per_label.values())
             }
         }
 
@@ -1480,24 +1598,68 @@ class FaceRecognizer:
         self.enable_blink_verification = False
         self.reset_blink_verification()
     
-    def get_blink_verification_info(self) -> Dict:
+    def get_blink_verification_info(self, label_id: Optional[int] = None) -> Dict:
         """
         Get blink verification configuration and status.
+        
+        Args:
+            label_id: Optional label ID to get info for specific person.
+                     If None, returns overall system info.
         
         Returns:
             Dictionary with blink verification settings and current status
         """
-        return {
+        base_info = {
             'enabled': self.enable_blink_verification,
             'min_blink_interval': self.min_blink_interval,
             'max_blink_interval': self.max_blink_interval,
             'required_blinks': self.required_blinks,
             'blink_window': self.blink_window,
-            'current_blinks': len(self._blink_timestamps),
-            'blink_verified': self._blink_verified,
-            'verification_in_progress': self._verification_in_progress,
-            'session_duration': time.time() - self._session_start_time if self._session_start_time > 0 else 0.0
+            'total_tracked_people': len(self._blink_timestamps_per_label)
         }
+        
+        if label_id is not None and label_id in self._blink_timestamps_per_label:
+            # Return info for specific person
+            base_info.update({
+                'label_id': label_id,
+                'current_blinks': len(self._blink_timestamps_per_label[label_id]),
+                'blink_verified': self._blink_verified_per_label.get(label_id, False),
+                'verification_in_progress': self._verification_in_progress_per_label.get(label_id, False),
+                'session_duration': time.time() - self._session_start_per_label[label_id] if label_id in self._session_start_per_label else 0.0
+            })
+        elif label_id is not None:
+            # Person not tracked yet
+            base_info.update({
+                'label_id': label_id,
+                'current_blinks': 0,
+                'blink_verified': False,
+                'verification_in_progress': False,
+                'session_duration': 0.0,
+                'note': 'Person not yet tracked'
+            })
+        
+        return base_info
+    
+    def get_all_user_blink_stats(self) -> Dict[str, Dict]:
+        """
+        Get blink statistics for all tracked users.
+        
+        Returns:
+            Dictionary mapping user names to their blink statistics
+        """
+        stats = {}
+        for label_id, timestamps in self._blink_timestamps_per_label.items():
+            # Get name from label_to_name dict
+            name = self.label_to_name.get(label_id, f"Unknown_{label_id}")
+            stats[name] = {
+                'label_id': label_id,
+                'total_blinks': len(timestamps),
+                'blink_verified': self._blink_verified_per_label.get(label_id, False),
+                'verification_in_progress': self._verification_in_progress_per_label.get(label_id, False),
+                'session_duration': time.time() - self._session_start_per_label[label_id] if label_id in self._session_start_per_label else 0.0,
+                'recent_blink_timestamps': timestamps[-5:] if len(timestamps) > 0 else []  # Last 5 blinks
+            }
+        return stats
     
     def get_antispoofing_info(self) -> Dict:
         """

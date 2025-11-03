@@ -1,0 +1,4776 @@
+{
+  "test_date": "2025-10-29 09:58:23",
+  "primary_subjects": {
+    "OMAR": {
+      "total_tests": 41,
+      "successful": 39,
+      "failed": 2,
+      "accuracy": 95.1,
+      "avg_confidence": 43.7,
+      "tests": [
+        {
+          "test_id": "OMAR_1",
+          "success": true,
+          "confidence": 42.61,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.93
+        },
+        {
+          "test_id": "OMAR_2",
+          "success": true,
+          "confidence": 38.0,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "OMAR_3",
+          "success": true,
+          "confidence": 43.3,
+          "recognition_time": 0.042,
+          "anti_spoof_passed": true,
+          "quality_score": 0.91
+        },
+        {
+          "test_id": "OMAR_4",
+          "success": true,
+          "confidence": 47.35,
+          "recognition_time": 0.044,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "OMAR_5",
+          "success": true,
+          "confidence": 43.41,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "OMAR_6",
+          "success": true,
+          "confidence": 42.36,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "OMAR_7",
+          "success": true,
+          "confidence": 43.23,
+          "recognition_time": 0.041,
+          "anti_spoof_passed": true,
+          "quality_score": 0.84
+        },
+        {
+          "test_id": "OMAR_8",
+          "success": true,
+          "confidence": 45.89,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "OMAR_9",
+          "success": true,
+          "confidence": 40.6,
+          "recognition_time": 0.04,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "OMAR_10",
+          "success": true,
+          "confidence": 42.04,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.93
+        },
+        {
+          "test_id": "OMAR_11",
+          "success": true,
+          "confidence": 44.48,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "OMAR_12",
+          "success": true,
+          "confidence": 42.26,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "OMAR_13",
+          "success": true,
+          "confidence": 43.24,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "OMAR_14",
+          "success": true,
+          "confidence": 47.3,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "OMAR_15",
+          "success": true,
+          "confidence": 39.66,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "OMAR_16",
+          "success": true,
+          "confidence": 42.88,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.91
+        },
+        {
+          "test_id": "OMAR_17",
+          "success": true,
+          "confidence": 44.16,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.82
+        },
+        {
+          "test_id": "OMAR_18",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "OMAR_19",
+          "success": true,
+          "confidence": 45.87,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "OMAR_20",
+          "success": true,
+          "confidence": 38.62,
+          "recognition_time": 0.04,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "OMAR_21",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.82
+        },
+        {
+          "test_id": "OMAR_22",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.052,
+          "anti_spoof_passed": true,
+          "quality_score": 0.83
+        },
+        {
+          "test_id": "OMAR_23",
+          "success": true,
+          "confidence": 46.24,
+          "recognition_time": 0.042,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "OMAR_24",
+          "success": true,
+          "confidence": 43.51,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.82
+        },
+        {
+          "test_id": "OMAR_25",
+          "success": true,
+          "confidence": 38.0,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "OMAR_26",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.04,
+          "anti_spoof_passed": true,
+          "quality_score": 0.82
+        },
+        {
+          "test_id": "OMAR_27",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "OMAR_28",
+          "success": true,
+          "confidence": 46.22,
+          "recognition_time": 0.054,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "OMAR_29",
+          "success": true,
+          "confidence": 40.18,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.85
+        },
+        {
+          "test_id": "OMAR_30",
+          "success": true,
+          "confidence": 38.0,
+          "recognition_time": 0.044,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "OMAR_31",
+          "success": true,
+          "confidence": 40.96,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "OMAR_32",
+          "success": true,
+          "confidence": 46.97,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "OMAR_33",
+          "success": true,
+          "confidence": 46.42,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.91
+        },
+        {
+          "test_id": "OMAR_34",
+          "success": true,
+          "confidence": 41.07,
+          "recognition_time": 0.054,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "OMAR_35",
+          "success": true,
+          "confidence": 42.03,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.85
+        },
+        {
+          "test_id": "OMAR_36",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "OMAR_37",
+          "success": true,
+          "confidence": 40.39,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "OMAR_38",
+          "success": true,
+          "confidence": 48.0,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "OMAR_39",
+          "success": true,
+          "confidence": 47.53,
+          "recognition_time": 0.054,
+          "anti_spoof_passed": true,
+          "quality_score": 0.83
+        },
+        {
+          "test_id": "OMAR_40",
+          "success": false,
+          "confidence": 59.9,
+          "recognition_time": 0.054,
+          "anti_spoof_passed": true,
+          "quality_score": 0.78,
+          "failure_reason": "Confidence above threshold"
+        },
+        {
+          "test_id": "OMAR_41",
+          "success": false,
+          "confidence": 52.26,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.71,
+          "failure_reason": "Confidence above threshold"
+        }
+      ]
+    },
+    "NOUR": {
+      "total_tests": 52,
+      "successful": 50,
+      "failed": 2,
+      "accuracy": 96.2,
+      "avg_confidence": 39.2,
+      "tests": [
+        {
+          "test_id": "NOUR_1",
+          "success": true,
+          "confidence": 40.72,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.96
+        },
+        {
+          "test_id": "NOUR_2",
+          "success": true,
+          "confidence": 38.45,
+          "recognition_time": 0.042,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "NOUR_3",
+          "success": true,
+          "confidence": 42.22,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_4",
+          "success": true,
+          "confidence": 44.41,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "NOUR_5",
+          "success": true,
+          "confidence": 35.22,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.96
+        },
+        {
+          "test_id": "NOUR_6",
+          "success": true,
+          "confidence": 34.48,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "NOUR_7",
+          "success": true,
+          "confidence": 37.2,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_8",
+          "success": true,
+          "confidence": 38.66,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.91
+        },
+        {
+          "test_id": "NOUR_9",
+          "success": true,
+          "confidence": 38.99,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_10",
+          "success": true,
+          "confidence": 40.16,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "NOUR_11",
+          "success": true,
+          "confidence": 45.0,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_12",
+          "success": true,
+          "confidence": 37.02,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "NOUR_13",
+          "success": true,
+          "confidence": 38.87,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_14",
+          "success": true,
+          "confidence": 38.01,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_15",
+          "success": true,
+          "confidence": 37.62,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_16",
+          "success": true,
+          "confidence": 37.61,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_17",
+          "success": true,
+          "confidence": 40.76,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_18",
+          "success": true,
+          "confidence": 40.16,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "NOUR_19",
+          "success": true,
+          "confidence": 42.01,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.93
+        },
+        {
+          "test_id": "NOUR_20",
+          "success": true,
+          "confidence": 41.46,
+          "recognition_time": 0.042,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_21",
+          "success": true,
+          "confidence": 45.0,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_22",
+          "success": true,
+          "confidence": 37.97,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "NOUR_23",
+          "success": true,
+          "confidence": 36.7,
+          "recognition_time": 0.042,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "NOUR_24",
+          "success": true,
+          "confidence": 39.67,
+          "recognition_time": 0.049,
+          "anti_spoof_passed": true,
+          "quality_score": 0.96
+        },
+        {
+          "test_id": "NOUR_25",
+          "success": true,
+          "confidence": 36.64,
+          "recognition_time": 0.052,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_26",
+          "success": true,
+          "confidence": 39.87,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "NOUR_27",
+          "success": true,
+          "confidence": 42.6,
+          "recognition_time": 0.044,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "NOUR_28",
+          "success": true,
+          "confidence": 39.48,
+          "recognition_time": 0.05,
+          "anti_spoof_passed": true,
+          "quality_score": 0.92
+        },
+        {
+          "test_id": "NOUR_29",
+          "success": true,
+          "confidence": 36.38,
+          "recognition_time": 0.046,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_30",
+          "success": true,
+          "confidence": 41.52,
+          "recognition_time": 0.044,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_31",
+          "success": true,
+          "confidence": 39.35,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_32",
+          "success": true,
+          "confidence": 38.09,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_33",
+          "success": true,
+          "confidence": 40.66,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "NOUR_34",
+          "success": true,
+          "confidence": 34.7,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.85
+        },
+        {
+          "test_id": "NOUR_35",
+          "success": true,
+          "confidence": 43.29,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_36",
+          "success": true,
+          "confidence": 39.27,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.89
+        },
+        {
+          "test_id": "NOUR_37",
+          "success": true,
+          "confidence": 38.73,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "NOUR_38",
+          "success": true,
+          "confidence": 38.83,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.9
+        },
+        {
+          "test_id": "NOUR_39",
+          "success": true,
+          "confidence": 41.15,
+          "recognition_time": 0.047,
+          "anti_spoof_passed": true,
+          "quality_score": 0.93
+        },
+        {
+          "test_id": "NOUR_40",
+          "success": true,
+          "confidence": 38.62,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "NOUR_41",
+          "success": true,
+          "confidence": 45.0,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.87
+        },
+        {
+          "test_id": "NOUR_42",
+          "success": true,
+          "confidence": 34.95,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_43",
+          "success": true,
+          "confidence": 36.71,
+          "recognition_time": 0.053,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "NOUR_44",
+          "success": true,
+          "confidence": 35.51,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_45",
+          "success": true,
+          "confidence": 35.07,
+          "recognition_time": 0.043,
+          "anti_spoof_passed": true,
+          "quality_score": 0.94
+        },
+        {
+          "test_id": "NOUR_46",
+          "success": true,
+          "confidence": 39.81,
+          "recognition_time": 0.045,
+          "anti_spoof_passed": true,
+          "quality_score": 0.91
+        },
+        {
+          "test_id": "NOUR_47",
+          "success": true,
+          "confidence": 36.56,
+          "recognition_time": 0.051,
+          "anti_spoof_passed": true,
+          "quality_score": 0.88
+        },
+        {
+          "test_id": "NOUR_48",
+          "success": true,
+          "confidence": 41.91,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.95
+        },
+        {
+          "test_id": "NOUR_49",
+          "success": true,
+          "confidence": 38.93,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.86
+        },
+        {
+          "test_id": "NOUR_50",
+          "success": true,
+          "confidence": 40.84,
+          "recognition_time": 0.048,
+          "anti_spoof_passed": true,
+          "quality_score": 0.93
+        },
+        {
+          "test_id": "NOUR_51",
+          "success": false,
+          "confidence": 56.32,
+          "recognition_time": 0.06,
+          "anti_spoof_passed": true,
+          "quality_score": 0.69,
+          "failure_reason": "Confidence above threshold"
+        },
+        {
+          "test_id": "NOUR_52",
+          "success": false,
+          "confidence": 60.83,
+          "recognition_time": 0.054,
+          "anti_spoof_passed": true,
+          "quality_score": 0.78,
+          "failure_reason": "Confidence above threshold"
+        }
+      ]
+    }
+  },
+  "unknown_tests": {
+    "total_tests": 150,
+    "correctly_rejected": 142,
+    "false_positives": 8,
+    "rejection_accuracy": 94.7,
+    "tests": [
+      {
+        "test_id": "UNKNOWN_1",
+        "correctly_rejected": true,
+        "confidence": 84.97,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_2",
+        "correctly_rejected": true,
+        "confidence": 78.44,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_3",
+        "correctly_rejected": true,
+        "confidence": 71.03,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_4",
+        "correctly_rejected": true,
+        "confidence": 55.17,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_5",
+        "correctly_rejected": true,
+        "confidence": 56.02,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_6",
+        "correctly_rejected": true,
+        "confidence": 78.39,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_7",
+        "correctly_rejected": true,
+        "confidence": 83.72,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_8",
+        "correctly_rejected": true,
+        "confidence": 61.49,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_9",
+        "correctly_rejected": true,
+        "confidence": 67.84,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_10",
+        "correctly_rejected": true,
+        "confidence": 84.25,
+        "recognition_time": 0.065,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_11",
+        "correctly_rejected": true,
+        "confidence": 74.72,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_12",
+        "correctly_rejected": true,
+        "confidence": 57.56,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_13",
+        "correctly_rejected": true,
+        "confidence": 70.05,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_14",
+        "correctly_rejected": true,
+        "confidence": 68.37,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_15",
+        "correctly_rejected": true,
+        "confidence": 58.23,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_16",
+        "correctly_rejected": true,
+        "confidence": 59.09,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_17",
+        "correctly_rejected": true,
+        "confidence": 70.26,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_18",
+        "correctly_rejected": true,
+        "confidence": 81.82,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_19",
+        "correctly_rejected": true,
+        "confidence": 63.15,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_20",
+        "correctly_rejected": true,
+        "confidence": 77.84,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_21",
+        "correctly_rejected": true,
+        "confidence": 62.38,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_22",
+        "correctly_rejected": true,
+        "confidence": 62.31,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_23",
+        "correctly_rejected": true,
+        "confidence": 84.84,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_24",
+        "correctly_rejected": true,
+        "confidence": 67.54,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_25",
+        "correctly_rejected": true,
+        "confidence": 68.63,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_26",
+        "correctly_rejected": true,
+        "confidence": 67.1,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_27",
+        "correctly_rejected": true,
+        "confidence": 68.09,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_28",
+        "correctly_rejected": true,
+        "confidence": 64.91,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_29",
+        "correctly_rejected": true,
+        "confidence": 80.92,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_30",
+        "correctly_rejected": true,
+        "confidence": 71.33,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_31",
+        "correctly_rejected": true,
+        "confidence": 60.59,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_32",
+        "correctly_rejected": true,
+        "confidence": 59.86,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_33",
+        "correctly_rejected": true,
+        "confidence": 81.7,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_34",
+        "correctly_rejected": true,
+        "confidence": 80.82,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_35",
+        "correctly_rejected": true,
+        "confidence": 67.48,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_36",
+        "correctly_rejected": true,
+        "confidence": 58.48,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_37",
+        "correctly_rejected": true,
+        "confidence": 63.64,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_38",
+        "correctly_rejected": true,
+        "confidence": 55.41,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_39",
+        "correctly_rejected": true,
+        "confidence": 75.39,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_40",
+        "correctly_rejected": true,
+        "confidence": 82.94,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_41",
+        "correctly_rejected": true,
+        "confidence": 81.05,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_42",
+        "correctly_rejected": true,
+        "confidence": 69.55,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_43",
+        "correctly_rejected": true,
+        "confidence": 65.09,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_44",
+        "correctly_rejected": true,
+        "confidence": 70.26,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_45",
+        "correctly_rejected": true,
+        "confidence": 84.05,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_46",
+        "correctly_rejected": true,
+        "confidence": 67.18,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_47",
+        "correctly_rejected": true,
+        "confidence": 55.24,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_48",
+        "correctly_rejected": true,
+        "confidence": 57.35,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_49",
+        "correctly_rejected": true,
+        "confidence": 55.54,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_50",
+        "correctly_rejected": true,
+        "confidence": 76.25,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_51",
+        "correctly_rejected": true,
+        "confidence": 74.34,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_52",
+        "correctly_rejected": true,
+        "confidence": 58.82,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_53",
+        "correctly_rejected": true,
+        "confidence": 84.07,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_54",
+        "correctly_rejected": true,
+        "confidence": 73.9,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_55",
+        "correctly_rejected": true,
+        "confidence": 55.8,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_56",
+        "correctly_rejected": true,
+        "confidence": 60.13,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_57",
+        "correctly_rejected": true,
+        "confidence": 82.85,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_58",
+        "correctly_rejected": true,
+        "confidence": 65.75,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_59",
+        "correctly_rejected": true,
+        "confidence": 69.82,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_60",
+        "correctly_rejected": true,
+        "confidence": 68.64,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_61",
+        "correctly_rejected": true,
+        "confidence": 57.45,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_62",
+        "correctly_rejected": true,
+        "confidence": 67.18,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_63",
+        "correctly_rejected": true,
+        "confidence": 84.64,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_64",
+        "correctly_rejected": true,
+        "confidence": 79.8,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_65",
+        "correctly_rejected": true,
+        "confidence": 67.22,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_66",
+        "correctly_rejected": true,
+        "confidence": 66.58,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_67",
+        "correctly_rejected": true,
+        "confidence": 62.98,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_68",
+        "correctly_rejected": true,
+        "confidence": 60.22,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_69",
+        "correctly_rejected": true,
+        "confidence": 76.86,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_70",
+        "correctly_rejected": true,
+        "confidence": 65.95,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_71",
+        "correctly_rejected": true,
+        "confidence": 74.95,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_72",
+        "correctly_rejected": true,
+        "confidence": 79.09,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_73",
+        "correctly_rejected": true,
+        "confidence": 75.95,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_74",
+        "correctly_rejected": true,
+        "confidence": 69.59,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_75",
+        "correctly_rejected": true,
+        "confidence": 78.86,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_76",
+        "correctly_rejected": true,
+        "confidence": 61.79,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_77",
+        "correctly_rejected": true,
+        "confidence": 80.96,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_78",
+        "correctly_rejected": true,
+        "confidence": 63.97,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_79",
+        "correctly_rejected": true,
+        "confidence": 62.46,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_80",
+        "correctly_rejected": true,
+        "confidence": 61.66,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_81",
+        "correctly_rejected": true,
+        "confidence": 57.32,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_82",
+        "correctly_rejected": true,
+        "confidence": 80.04,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_83",
+        "correctly_rejected": true,
+        "confidence": 75.39,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_84",
+        "correctly_rejected": true,
+        "confidence": 61.53,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_85",
+        "correctly_rejected": true,
+        "confidence": 75.34,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_86",
+        "correctly_rejected": true,
+        "confidence": 58.19,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_87",
+        "correctly_rejected": true,
+        "confidence": 66.91,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_88",
+        "correctly_rejected": true,
+        "confidence": 55.95,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_89",
+        "correctly_rejected": true,
+        "confidence": 72.28,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_90",
+        "correctly_rejected": true,
+        "confidence": 70.49,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_91",
+        "correctly_rejected": true,
+        "confidence": 78.24,
+        "recognition_time": 0.065,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_92",
+        "correctly_rejected": true,
+        "confidence": 59.19,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_93",
+        "correctly_rejected": true,
+        "confidence": 81.41,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_94",
+        "correctly_rejected": true,
+        "confidence": 68.29,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_95",
+        "correctly_rejected": true,
+        "confidence": 61.43,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_96",
+        "correctly_rejected": true,
+        "confidence": 57.68,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_97",
+        "correctly_rejected": true,
+        "confidence": 81.25,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_98",
+        "correctly_rejected": true,
+        "confidence": 61.57,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_99",
+        "correctly_rejected": true,
+        "confidence": 56.9,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_100",
+        "correctly_rejected": true,
+        "confidence": 81.03,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_101",
+        "correctly_rejected": true,
+        "confidence": 82.54,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_102",
+        "correctly_rejected": true,
+        "confidence": 73.82,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_103",
+        "correctly_rejected": true,
+        "confidence": 56.21,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_104",
+        "correctly_rejected": true,
+        "confidence": 83.4,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_105",
+        "correctly_rejected": true,
+        "confidence": 80.09,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_106",
+        "correctly_rejected": true,
+        "confidence": 73.86,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_107",
+        "correctly_rejected": true,
+        "confidence": 80.06,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_108",
+        "correctly_rejected": true,
+        "confidence": 73.55,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_109",
+        "correctly_rejected": true,
+        "confidence": 80.46,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_110",
+        "correctly_rejected": true,
+        "confidence": 83.22,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_111",
+        "correctly_rejected": true,
+        "confidence": 77.72,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_112",
+        "correctly_rejected": true,
+        "confidence": 62.51,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_113",
+        "correctly_rejected": true,
+        "confidence": 72.12,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_114",
+        "correctly_rejected": true,
+        "confidence": 68.76,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_115",
+        "correctly_rejected": true,
+        "confidence": 61.08,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_116",
+        "correctly_rejected": true,
+        "confidence": 74.39,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_117",
+        "correctly_rejected": true,
+        "confidence": 81.46,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_118",
+        "correctly_rejected": true,
+        "confidence": 69.73,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_119",
+        "correctly_rejected": true,
+        "confidence": 76.86,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_120",
+        "correctly_rejected": true,
+        "confidence": 78.35,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_121",
+        "correctly_rejected": true,
+        "confidence": 60.25,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_122",
+        "correctly_rejected": true,
+        "confidence": 58.48,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_123",
+        "correctly_rejected": true,
+        "confidence": 74.74,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_124",
+        "correctly_rejected": true,
+        "confidence": 77.25,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_125",
+        "correctly_rejected": true,
+        "confidence": 55.13,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_126",
+        "correctly_rejected": true,
+        "confidence": 58.23,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_127",
+        "correctly_rejected": true,
+        "confidence": 74.16,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_128",
+        "correctly_rejected": true,
+        "confidence": 58.85,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_129",
+        "correctly_rejected": true,
+        "confidence": 57.4,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_130",
+        "correctly_rejected": true,
+        "confidence": 75.65,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_131",
+        "correctly_rejected": true,
+        "confidence": 77.28,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_132",
+        "correctly_rejected": true,
+        "confidence": 83.48,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_133",
+        "correctly_rejected": true,
+        "confidence": 70.03,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_134",
+        "correctly_rejected": true,
+        "confidence": 58.42,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_135",
+        "correctly_rejected": true,
+        "confidence": 83.83,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_136",
+        "correctly_rejected": true,
+        "confidence": 74.9,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_137",
+        "correctly_rejected": true,
+        "confidence": 75.87,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_138",
+        "correctly_rejected": true,
+        "confidence": 77.86,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_139",
+        "correctly_rejected": true,
+        "confidence": 75.09,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_140",
+        "correctly_rejected": true,
+        "confidence": 59.31,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_141",
+        "correctly_rejected": true,
+        "confidence": 65.15,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_142",
+        "correctly_rejected": true,
+        "confidence": 77.68,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "result": "Correctly Rejected"
+      },
+      {
+        "test_id": "UNKNOWN_143",
+        "correctly_rejected": false,
+        "confidence": 42.38,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_40",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_144",
+        "correctly_rejected": false,
+        "confidence": 42.37,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_15",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_145",
+        "correctly_rejected": false,
+        "confidence": 42.51,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_15",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_146",
+        "correctly_rejected": false,
+        "confidence": 40.55,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_33",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_147",
+        "correctly_rejected": false,
+        "confidence": 42.3,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_22",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_148",
+        "correctly_rejected": false,
+        "confidence": 42.61,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_37",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_149",
+        "correctly_rejected": false,
+        "confidence": 40.43,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_10",
+        "result": "False Positive"
+      },
+      {
+        "test_id": "UNKNOWN_150",
+        "correctly_rejected": false,
+        "confidence": 38.1,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "misidentified_as": "Person_40",
+        "result": "False Positive"
+      }
+    ]
+  },
+  "other_users": {
+    "total_tests": 320,
+    "successful": 294,
+    "failed": 26,
+    "accuracy": 91.9,
+    "avg_confidence": 43.5,
+    "num_users": 41,
+    "tests": [
+      {
+        "test_id": "Person_10_1",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 37.24,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_10_2",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 44.35,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_10_3",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 44.12,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_10_4",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 41.5,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_10_5",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 44.27,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_10_6",
+        "user": "Person_10",
+        "success": true,
+        "confidence": 38.38,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_10_7",
+        "user": "Person_10",
+        "success": false,
+        "confidence": 51.92,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.72,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_11_1",
+        "user": "Person_11",
+        "success": true,
+        "confidence": 46.06,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_11_2",
+        "user": "Person_11",
+        "success": true,
+        "confidence": 35.0,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_11_3",
+        "user": "Person_11",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_11_4",
+        "user": "Person_11",
+        "success": true,
+        "confidence": 47.89,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_11_5",
+        "user": "Person_11",
+        "success": true,
+        "confidence": 40.63,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_11_6",
+        "user": "Person_11",
+        "success": false,
+        "confidence": 69.22,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": false,
+        "quality_score": 0.69,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_12_1",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 42.49,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_12_2",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 43.12,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_12_3",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 42.24,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_12_4",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 35.51,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_12_5",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 44.93,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_12_6",
+        "user": "Person_12",
+        "success": true,
+        "confidence": 44.68,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_12_7",
+        "user": "Person_12",
+        "success": false,
+        "confidence": 56.37,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.69,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_13_1",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 39.84,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_13_2",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 43.47,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_13_3",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 44.25,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_13_4",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 43.48,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_13_5",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 38.42,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_13_6",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 43.37,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_13_7",
+        "user": "Person_13",
+        "success": true,
+        "confidence": 45.15,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_13_8",
+        "user": "Person_13",
+        "success": false,
+        "confidence": 52.58,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_14_1",
+        "user": "Person_14",
+        "success": true,
+        "confidence": 40.48,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_14_2",
+        "user": "Person_14",
+        "success": true,
+        "confidence": 47.09,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_14_3",
+        "user": "Person_14",
+        "success": true,
+        "confidence": 41.88,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_14_4",
+        "user": "Person_14",
+        "success": true,
+        "confidence": 44.29,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_14_5",
+        "user": "Person_14",
+        "success": true,
+        "confidence": 46.21,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_14_6",
+        "user": "Person_14",
+        "success": false,
+        "confidence": 55.07,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.75,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_15_1",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 37.55,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_15_2",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 43.67,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_15_3",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 39.52,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_15_4",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 41.36,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_15_5",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 40.14,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_15_6",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 44.14,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_15_7",
+        "user": "Person_15",
+        "success": true,
+        "confidence": 38.41,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_15_8",
+        "user": "Person_15",
+        "success": false,
+        "confidence": 63.29,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": false,
+        "quality_score": 0.8,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_16_1",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 43.25,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_16_2",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 42.91,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_16_3",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 47.37,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_16_4",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 41.06,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_16_5",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 46.33,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_16_6",
+        "user": "Person_16",
+        "success": true,
+        "confidence": 44.16,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_16_7",
+        "user": "Person_16",
+        "success": false,
+        "confidence": 61.88,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "quality_score": 0.72,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_17_1",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 40.52,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_17_2",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 46.3,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_17_3",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 40.24,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_17_4",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 38.96,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_17_5",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 44.96,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_17_6",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_17_7",
+        "user": "Person_17",
+        "success": true,
+        "confidence": 39.5,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_17_8",
+        "user": "Person_17",
+        "success": false,
+        "confidence": 63.29,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_18_1",
+        "user": "Person_18",
+        "success": true,
+        "confidence": 41.54,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_18_2",
+        "user": "Person_18",
+        "success": true,
+        "confidence": 42.78,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_18_3",
+        "user": "Person_18",
+        "success": true,
+        "confidence": 43.76,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_18_4",
+        "user": "Person_18",
+        "success": true,
+        "confidence": 40.87,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_18_5",
+        "user": "Person_18",
+        "success": true,
+        "confidence": 39.5,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_18_6",
+        "user": "Person_18",
+        "success": false,
+        "confidence": 57.91,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.74,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_19_1",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 42.97,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_19_2",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 45.81,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_19_3",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 39.45,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_19_4",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 40.94,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_19_5",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 37.6,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_19_6",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_19_7",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 44.25,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_19_8",
+        "user": "Person_19",
+        "success": true,
+        "confidence": 45.82,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_19_9",
+        "user": "Person_19",
+        "success": false,
+        "confidence": 69.85,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "quality_score": 0.65,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_20_1",
+        "user": "Person_20",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_20_2",
+        "user": "Person_20",
+        "success": true,
+        "confidence": 41.09,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_20_3",
+        "user": "Person_20",
+        "success": true,
+        "confidence": 40.86,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_20_4",
+        "user": "Person_20",
+        "success": true,
+        "confidence": 44.74,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_20_5",
+        "user": "Person_20",
+        "success": true,
+        "confidence": 47.1,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_20_6",
+        "user": "Person_20",
+        "success": false,
+        "confidence": 66.83,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": false,
+        "quality_score": 0.76,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_21_1",
+        "user": "Person_21",
+        "success": true,
+        "confidence": 42.94,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_21_2",
+        "user": "Person_21",
+        "success": true,
+        "confidence": 47.28,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_21_3",
+        "user": "Person_21",
+        "success": true,
+        "confidence": 42.29,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_21_4",
+        "user": "Person_21",
+        "success": true,
+        "confidence": 38.56,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_21_5",
+        "user": "Person_21",
+        "success": true,
+        "confidence": 40.18,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_21_6",
+        "user": "Person_21",
+        "success": false,
+        "confidence": 68.37,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.68,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_22_1",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 44.73,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_22_2",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 48.21,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_22_3",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 39.66,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_22_4",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 38.8,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_22_5",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 41.0,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_22_6",
+        "user": "Person_22",
+        "success": true,
+        "confidence": 43.01,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_22_7",
+        "user": "Person_22",
+        "success": false,
+        "confidence": 65.16,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": false,
+        "quality_score": 0.7,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_23_1",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 45.13,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_23_2",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 37.55,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_23_3",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 41.63,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_23_4",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 41.19,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_23_5",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 43.73,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_23_6",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 47.08,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_23_7",
+        "user": "Person_23",
+        "success": true,
+        "confidence": 38.82,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_23_8",
+        "user": "Person_23",
+        "success": false,
+        "confidence": 60.58,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": true,
+        "quality_score": 0.67,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_24_1",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 43.57,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_24_2",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_24_3",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 36.31,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_24_4",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 47.44,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_24_5",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 43.84,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_24_6",
+        "user": "Person_24",
+        "success": true,
+        "confidence": 42.05,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_24_7",
+        "user": "Person_24",
+        "success": false,
+        "confidence": 69.33,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_25_1",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 45.13,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_25_2",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 41.77,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_25_3",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 44.43,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_25_4",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 39.95,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_25_5",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 48.74,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_25_6",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 38.27,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_25_7",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_25_8",
+        "user": "Person_25",
+        "success": true,
+        "confidence": 43.88,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_25_9",
+        "user": "Person_25",
+        "success": false,
+        "confidence": 65.27,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": true,
+        "quality_score": 0.68,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_26_1",
+        "user": "Person_26",
+        "success": true,
+        "confidence": 43.32,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_26_2",
+        "user": "Person_26",
+        "success": true,
+        "confidence": 43.88,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_26_3",
+        "user": "Person_26",
+        "success": true,
+        "confidence": 40.43,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_26_4",
+        "user": "Person_26",
+        "success": true,
+        "confidence": 44.63,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_26_5",
+        "user": "Person_26",
+        "success": true,
+        "confidence": 41.01,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_26_6",
+        "user": "Person_26",
+        "success": false,
+        "confidence": 63.97,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "quality_score": 0.7,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_27_1",
+        "user": "Person_27",
+        "success": true,
+        "confidence": 47.95,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_27_2",
+        "user": "Person_27",
+        "success": true,
+        "confidence": 40.4,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_27_3",
+        "user": "Person_27",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_27_4",
+        "user": "Person_27",
+        "success": true,
+        "confidence": 42.63,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_27_5",
+        "user": "Person_27",
+        "success": true,
+        "confidence": 45.08,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_27_6",
+        "user": "Person_27",
+        "success": false,
+        "confidence": 65.04,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.66,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_28_1",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 45.81,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_28_2",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 48.13,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_28_3",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 41.95,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_28_4",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 41.99,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_28_5",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 46.42,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_28_6",
+        "user": "Person_28",
+        "success": true,
+        "confidence": 40.2,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_28_7",
+        "user": "Person_28",
+        "success": false,
+        "confidence": 64.22,
+        "recognition_time": 0.061,
+        "anti_spoof_passed": true,
+        "quality_score": 0.74,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_29_1",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 41.93,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_29_2",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_29_3",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 46.83,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_29_4",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_29_5",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 37.26,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_29_6",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 43.39,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_29_7",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 43.17,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_29_8",
+        "user": "Person_29",
+        "success": true,
+        "confidence": 42.41,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_29_9",
+        "user": "Person_29",
+        "success": false,
+        "confidence": 67.22,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "quality_score": 0.64,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_30_1",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 35.0,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_30_2",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 46.85,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_30_3",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 43.0,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_30_4",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 36.37,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_30_5",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 37.33,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_30_6",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 44.51,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_30_7",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 42.72,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_30_8",
+        "user": "Person_30",
+        "success": true,
+        "confidence": 39.95,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_30_9",
+        "user": "Person_30",
+        "success": false,
+        "confidence": 65.59,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "quality_score": 0.71,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_31_1",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 42.86,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_31_2",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 43.42,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_31_3",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 46.87,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_31_4",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 38.82,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_31_5",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 40.42,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_31_6",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 42.06,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_31_7",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 47.81,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_31_8",
+        "user": "Person_31",
+        "success": true,
+        "confidence": 40.26,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_31_9",
+        "user": "Person_31",
+        "success": false,
+        "confidence": 57.41,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": false,
+        "quality_score": 0.7,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_32_1",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 43.22,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_32_2",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 45.11,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_32_3",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 44.83,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_32_4",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_32_5",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 36.39,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_32_6",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 40.88,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_32_7",
+        "user": "Person_32",
+        "success": true,
+        "confidence": 45.04,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_32_8",
+        "user": "Person_32",
+        "success": false,
+        "confidence": 53.05,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.75,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_33_1",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 35.0,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_33_2",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 41.83,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_33_3",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 40.47,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_33_4",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 44.11,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_33_5",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 45.38,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_33_6",
+        "user": "Person_33",
+        "success": true,
+        "confidence": 42.38,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_33_7",
+        "user": "Person_33",
+        "success": false,
+        "confidence": 55.98,
+        "recognition_time": 0.063,
+        "anti_spoof_passed": false,
+        "quality_score": 0.7,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_34_1",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 39.91,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_34_2",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 42.85,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_34_3",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 45.25,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_34_4",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 38.22,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_34_5",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 43.76,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_34_6",
+        "user": "Person_34",
+        "success": true,
+        "confidence": 43.44,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_34_7",
+        "user": "Person_34",
+        "success": false,
+        "confidence": 58.39,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.69,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_35_1",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 41.95,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_35_2",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 39.31,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_35_3",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 40.25,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_35_4",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 47.94,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_35_5",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 42.97,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_35_6",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 42.37,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_35_7",
+        "user": "Person_35",
+        "success": true,
+        "confidence": 44.62,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_35_8",
+        "user": "Person_35",
+        "success": false,
+        "confidence": 64.26,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.71,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_36_1",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 40.54,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_36_2",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 43.39,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_36_3",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 43.25,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_36_4",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 45.95,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_36_5",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 41.28,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_36_6",
+        "user": "Person_36",
+        "success": true,
+        "confidence": 37.43,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_36_7",
+        "user": "Person_36",
+        "success": false,
+        "confidence": 59.73,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": false,
+        "quality_score": 0.75,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_37_1",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 43.43,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_37_2",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 41.98,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_37_3",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 40.0,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_37_4",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 40.7,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_37_5",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 40.86,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_37_6",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 41.83,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_37_7",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 43.87,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_37_8",
+        "user": "Person_37",
+        "success": true,
+        "confidence": 41.82,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_37_9",
+        "user": "Person_37",
+        "success": false,
+        "confidence": 60.03,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.72,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_38_1",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 40.07,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_38_2",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 43.92,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_38_3",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 47.88,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_38_4",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 39.47,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_38_5",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 44.04,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_38_6",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 46.69,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_38_7",
+        "user": "Person_38",
+        "success": true,
+        "confidence": 46.69,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_38_8",
+        "user": "Person_38",
+        "success": false,
+        "confidence": 54.81,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.77,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_39_1",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 45.31,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_39_2",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 48.95,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_39_3",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 40.68,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_39_4",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 48.64,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_39_5",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 44.42,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_39_6",
+        "user": "Person_39",
+        "success": true,
+        "confidence": 43.85,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_39_7",
+        "user": "Person_39",
+        "success": false,
+        "confidence": 61.11,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.68,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_40_1",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_40_2",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 44.05,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_40_3",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 47.44,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_40_4",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_40_5",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 47.3,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_40_6",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 41.13,
+        "recognition_time": 0.044,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_40_7",
+        "user": "Person_40",
+        "success": true,
+        "confidence": 44.54,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_40_8",
+        "user": "Person_40",
+        "success": false,
+        "confidence": 63.35,
+        "recognition_time": 0.06,
+        "anti_spoof_passed": false,
+        "quality_score": 0.72,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_41_1",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 39.47,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_41_2",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 47.36,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_41_3",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 38.08,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_41_4",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 46.46,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_41_5",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 44.27,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_41_6",
+        "user": "Person_41",
+        "success": true,
+        "confidence": 38.4,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_41_7",
+        "user": "Person_41",
+        "success": false,
+        "confidence": 63.24,
+        "recognition_time": 0.064,
+        "anti_spoof_passed": true,
+        "quality_score": 0.75,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_42_1",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 37.68,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_42_2",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 43.65,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_42_3",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.83
+      },
+      {
+        "test_id": "Person_42_4",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 44.03,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_42_5",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 39.53,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_42_6",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 43.33,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_42_7",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 38.59,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_42_8",
+        "user": "Person_42",
+        "success": true,
+        "confidence": 45.82,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_42_9",
+        "user": "Person_42",
+        "success": false,
+        "confidence": 51.01,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.76,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_43_1",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 49.0,
+        "recognition_time": 0.056,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_43_2",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 45.36,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_43_3",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 42.08,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_43_4",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 41.65,
+        "recognition_time": 0.046,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_43_5",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 40.09,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_43_6",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 44.17,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.82
+      },
+      {
+        "test_id": "Person_43_7",
+        "user": "Person_43",
+        "success": true,
+        "confidence": 42.59,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_43_8",
+        "user": "Person_43",
+        "success": false,
+        "confidence": 52.69,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": false,
+        "quality_score": 0.72,
+        "failure_reason": "Poor image quality"
+      },
+      {
+        "test_id": "Person_44_1",
+        "user": "Person_44",
+        "success": true,
+        "confidence": 47.26,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_44_2",
+        "user": "Person_44",
+        "success": true,
+        "confidence": 38.18,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_44_3",
+        "user": "Person_44",
+        "success": true,
+        "confidence": 41.54,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_44_4",
+        "user": "Person_44",
+        "success": true,
+        "confidence": 43.2,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_44_5",
+        "user": "Person_44",
+        "success": true,
+        "confidence": 37.87,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_44_6",
+        "user": "Person_44",
+        "success": false,
+        "confidence": 60.17,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "quality_score": 0.71,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_45_1",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 46.15,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.87
+      },
+      {
+        "test_id": "Person_45_2",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 39.87,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_45_3",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 41.48,
+        "recognition_time": 0.05,
+        "anti_spoof_passed": true,
+        "quality_score": 0.89
+      },
+      {
+        "test_id": "Person_45_4",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 40.79,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_45_5",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 47.47,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_45_6",
+        "user": "Person_45",
+        "success": true,
+        "confidence": 43.55,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_45_7",
+        "user": "Person_45",
+        "success": false,
+        "confidence": 55.22,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": true,
+        "quality_score": 0.67,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_46_1",
+        "user": "Person_46",
+        "success": true,
+        "confidence": 43.52,
+        "recognition_time": 0.045,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_46_2",
+        "user": "Person_46",
+        "success": true,
+        "confidence": 43.85,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_46_3",
+        "user": "Person_46",
+        "success": true,
+        "confidence": 38.18,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_46_4",
+        "user": "Person_46",
+        "success": true,
+        "confidence": 39.39,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_46_5",
+        "user": "Person_46",
+        "success": true,
+        "confidence": 47.03,
+        "recognition_time": 0.043,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_46_6",
+        "user": "Person_46",
+        "success": false,
+        "confidence": 53.36,
+        "recognition_time": 0.062,
+        "anti_spoof_passed": false,
+        "quality_score": 0.79,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_47_1",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 48.36,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_47_2",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 44.37,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_47_3",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 44.64,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_47_4",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 45.06,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.86
+      },
+      {
+        "test_id": "Person_47_5",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 47.51,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_47_6",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 38.98,
+        "recognition_time": 0.042,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_47_7",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 44.31,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_47_8",
+        "user": "Person_47",
+        "success": true,
+        "confidence": 46.15,
+        "recognition_time": 0.057,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_47_9",
+        "user": "Person_47",
+        "success": false,
+        "confidence": 57.73,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.68,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_48_1",
+        "user": "Person_48",
+        "success": true,
+        "confidence": 38.82,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_48_2",
+        "user": "Person_48",
+        "success": true,
+        "confidence": 46.44,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_48_3",
+        "user": "Person_48",
+        "success": true,
+        "confidence": 38.93,
+        "recognition_time": 0.052,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_48_4",
+        "user": "Person_48",
+        "success": true,
+        "confidence": 39.65,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.94
+      },
+      {
+        "test_id": "Person_48_5",
+        "user": "Person_48",
+        "success": true,
+        "confidence": 41.82,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_48_6",
+        "user": "Person_48",
+        "success": false,
+        "confidence": 68.76,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "quality_score": 0.79,
+        "failure_reason": "Anti-spoofing failed"
+      },
+      {
+        "test_id": "Person_49_1",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 40.67,
+        "recognition_time": 0.041,
+        "anti_spoof_passed": true,
+        "quality_score": 0.91
+      },
+      {
+        "test_id": "Person_49_2",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 43.86,
+        "recognition_time": 0.048,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_49_3",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 45.4,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.84
+      },
+      {
+        "test_id": "Person_49_4",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 39.27,
+        "recognition_time": 0.051,
+        "anti_spoof_passed": true,
+        "quality_score": 0.88
+      },
+      {
+        "test_id": "Person_49_5",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 41.75,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.79
+      },
+      {
+        "test_id": "Person_49_6",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 47.54,
+        "recognition_time": 0.047,
+        "anti_spoof_passed": true,
+        "quality_score": 0.93
+      },
+      {
+        "test_id": "Person_49_7",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 43.07,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.9
+      },
+      {
+        "test_id": "Person_49_8",
+        "user": "Person_49",
+        "success": true,
+        "confidence": 46.58,
+        "recognition_time": 0.053,
+        "anti_spoof_passed": true,
+        "quality_score": 0.8
+      },
+      {
+        "test_id": "Person_49_9",
+        "user": "Person_49",
+        "success": false,
+        "confidence": 67.92,
+        "recognition_time": 0.049,
+        "anti_spoof_passed": true,
+        "quality_score": 0.74,
+        "failure_reason": "Confidence above threshold"
+      },
+      {
+        "test_id": "Person_50_1",
+        "user": "Person_50",
+        "success": true,
+        "confidence": 40.54,
+        "recognition_time": 0.058,
+        "anti_spoof_passed": true,
+        "quality_score": 0.81
+      },
+      {
+        "test_id": "Person_50_2",
+        "user": "Person_50",
+        "success": true,
+        "confidence": 43.36,
+        "recognition_time": 0.055,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_50_3",
+        "user": "Person_50",
+        "success": true,
+        "confidence": 41.2,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": true,
+        "quality_score": 0.85
+      },
+      {
+        "test_id": "Person_50_4",
+        "user": "Person_50",
+        "success": true,
+        "confidence": 45.81,
+        "recognition_time": 0.059,
+        "anti_spoof_passed": true,
+        "quality_score": 0.78
+      },
+      {
+        "test_id": "Person_50_5",
+        "user": "Person_50",
+        "success": true,
+        "confidence": 45.86,
+        "recognition_time": 0.04,
+        "anti_spoof_passed": true,
+        "quality_score": 0.92
+      },
+      {
+        "test_id": "Person_50_6",
+        "user": "Person_50",
+        "success": false,
+        "confidence": 66.22,
+        "recognition_time": 0.054,
+        "anti_spoof_passed": false,
+        "quality_score": 0.74,
+        "failure_reason": "Confidence above threshold"
+      }
+    ]
+  },
+  "overall_stats": {
+    "total_recognition_tests": 413,
+    "total_tests_with_unknown": 563,
+    "recognition_accuracy": 92.7,
+    "overall_system_accuracy": 93.3,
+    "anti_spoofing_accuracy": 94.5,
+    "anti_spoofing_tests": 160,
+    "anti_spoofing_successful": 151,
+    "avg_processing_time": 0.048,
+    "fps": 20.8
+  }
+}
