@@ -1,0 +1,15 @@
+{
+  "session_info": {
+    "session_id": "20251103_224247",
+    "start_time": "2025-11-03T22:42:47.742283",
+    "duration_seconds": 28.66,
+    "total_attempts": 0,
+    "unknown_attempts": 0
+  },
+  "per_user_details": {},
+  "summary": {
+    "total_users": 0,
+    "overall_accuracy": 0,
+    "total_spoofs_detected": 0
+  }
+}
