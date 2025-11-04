@@ -1,0 +1,112 @@
+[
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T11:13:29.955843",
+    "date": "2025-11-04",
+    "time": "11:13:29",
+    "confidence": 49.894693950556494,
+    "quality": 0.5,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T11:19:38.809476",
+    "date": "2025-11-04",
+    "time": "11:19:38",
+    "confidence": 48.34672234965197,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T11:19:54.693155",
+    "date": "2025-11-04",
+    "time": "11:19:54",
+    "confidence": 48.3374393601044,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "OUT"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T18:37:02.726441",
+    "date": "2025-11-04",
+    "time": "18:37:02",
+    "confidence": 39.78898865094229,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T20:43:57.703228",
+    "date": "2025-11-04",
+    "time": "20:43:57",
+    "confidence": 42.26784189884494,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T20:44:08.673774",
+    "date": "2025-11-04",
+    "time": "20:44:08",
+    "confidence": 38.59903808641807,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "OUT"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T21:04:09.723378",
+    "date": "2025-11-04",
+    "time": "21:04:09",
+    "confidence": 43.12374691899831,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T21:04:16.913599",
+    "date": "2025-11-04",
+    "time": "21:04:16",
+    "confidence": 46.895768056662675,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "OUT"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T21:45:15.226152",
+    "date": "2025-11-04",
+    "time": "21:45:15",
+    "confidence": 46.575511710243624,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  },
+  {
+    "user_id": 11,
+    "name": "OMAR",
+    "timestamp": "2025-11-04T21:54:03.728070",
+    "date": "2025-11-04",
+    "time": "21:54:03",
+    "confidence": 45.68047334117517,
+    "quality": 0.8500000000000001,
+    "is_live": 1,
+    "check_type": "IN"
+  }
+]
