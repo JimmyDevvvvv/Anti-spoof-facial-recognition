@@ -1,8 +1,9 @@
 """
-Perfect Attendance System - Enhanced Flask REST API Backend
-==================================================
+Perfect Attendance System - Enhanced Flask REST API Backend with Authentication
+===============================================================================
 
-Production-ready Flask backend with comprehensive API endpoints
+Production-ready Flask backend with JWT auth, role-based access control
+Uses JSON file storage instead of SQLite database
 """
 
 import base64
@@ -11,7 +12,7 @@ import io
 import json
 import logging
 import os
-import sqlite3
+import shutil
 import sys
 import time
 from collections import defaultdict
@@ -19,12 +20,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Lock, Thread
 from typing import Any, Dict, List, Optional, Tuple
+from functools import wraps
 
 import cv2
 import numpy as np
 from flask import Flask, Response, jsonify, request, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Add parent directory to path for imports
 current_file = Path(__file__).resolve()
@@ -38,11 +42,279 @@ try:
     from src.face.detector import FaceDetector
     from src.face.recognizer import FaceRecognizer
     from src.face.final_anti_spoof import UltimateAntiSpoof
-    from src.face.per_user_report_generator import PerUserReportGenerator
 except ImportError as e:
     print(f"❌ Import Error: {e}")
     print("Please ensure all required modules are in src/face/")
     sys.exit(1)
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+JWT_EXPIRATION_HOURS = 24
+
+# ============================================================================
+# JSON STORAGE MANAGER
+# ============================================================================
+
+class JSONStorage:
+    """Thread-safe JSON file storage manager."""
+    
+    def __init__(self, base_dir: str = "attendance_data"):
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(exist_ok=True)
+        
+        # Storage files
+        self.users_file = self.base_dir / "users.json"
+        self.attendance_file = self.base_dir / "attendance.json"
+        self.settings_file = self.base_dir / "settings.json"
+        
+        # Locks for thread safety
+        self.users_lock = Lock()
+        self.attendance_lock = Lock()
+        self.settings_lock = Lock()
+        
+        # Initialize files if they don't exist
+        self._init_files()
+        
+        self.logger = logging.getLogger(__name__)
+    
+    def _init_files(self):
+        """Initialize JSON files with default data."""
+        # Users file
+        if not self.users_file.exists():
+            default_users = {
+                "users": [
+                    {
+                        "id": 1,
+                        "username": "admin",
+                        "password": generate_password_hash("admin123"),
+                        "role": "admin",
+                        "name": "System Administrator",
+                        "email": "admin@example.com",
+                        "created_at": datetime.now().isoformat(),
+                        "active": True
+                    },
+                    {
+                        "id": 2,
+                        "username": "user",
+                        "password": generate_password_hash("user123"),
+                        "role": "user",
+                        "name": "Regular User",
+                        "email": "user@example.com",
+                        "created_at": datetime.now().isoformat(),
+                        "active": True
+                    }
+                ]
+            }
+            self._write_json(self.users_file, default_users, self.users_lock)
+        
+        # Attendance file
+        if not self.attendance_file.exists():
+            default_attendance = {
+                "records": []
+            }
+            self._write_json(self.attendance_file, default_attendance, self.attendance_lock)
+        
+        # Settings file
+        if not self.settings_file.exists():
+            default_settings = {
+                "system": {
+                    "security_level": "balanced",
+                    "duplicate_threshold_minutes": 5,
+                    "enable_antispoofing": True
+                },
+                "metadata": {
+                    "initialized_at": datetime.now().isoformat(),
+                    "version": "1.0.0"
+                }
+            }
+            self._write_json(self.settings_file, default_settings, self.settings_lock)
+    
+    def _read_json(self, file_path: Path, lock: Lock) -> Dict:
+        """Thread-safe JSON read."""
+        with lock:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                self.logger.error(f"Error reading {file_path}: {e}")
+                return {}
+    
+    def _write_json(self, file_path: Path, data: Dict, lock: Lock) -> bool:
+        """Thread-safe JSON write with backup."""
+        with lock:
+            try:
+                # Create backup
+                if file_path.exists():
+                    backup_path = file_path.with_suffix('.json.bak')
+                    shutil.copy2(file_path, backup_path)
+                
+                # Write new data
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                
+                return True
+            except Exception as e:
+                self.logger.error(f"Error writing {file_path}: {e}")
+                return False
+    
+    # User operations
+    def get_users(self) -> List[Dict]:
+        """Get all users."""
+        data = self._read_json(self.users_file, self.users_lock)
+        return data.get("users", [])
+    
+    def get_user_by_username(self, username: str) -> Optional[Dict]:
+        """Get user by username."""
+        users = self.get_users()
+        for user in users:
+            if user["username"] == username:
+                return user
+        return None
+    
+    def get_user_by_id(self, user_id: int) -> Optional[Dict]:
+        """Get user by ID."""
+        users = self.get_users()
+        for user in users:
+            if user["id"] == user_id:
+                return user
+        return None
+    
+    def create_user(self, user_data: Dict) -> Dict:
+        """Create new user."""
+        data = self._read_json(self.users_file, self.users_lock)
+        users = data.get("users", [])
+        
+        # Generate new ID
+        new_id = max([u["id"] for u in users], default=0) + 1
+        
+        # Create user
+        new_user = {
+            "id": new_id,
+            "username": user_data["username"],
+            "password": generate_password_hash(user_data["password"]),
+            "role": user_data.get("role", "user"),
+            "name": user_data.get("name", user_data["username"]),
+            "email": user_data.get("email", ""),
+            "created_at": datetime.now().isoformat(),
+            "active": True
+        }
+        
+        users.append(new_user)
+        data["users"] = users
+        
+        if self._write_json(self.users_file, data, self.users_lock):
+            return new_user
+        return {}
+    
+    def update_user(self, user_id: int, updates: Dict) -> bool:
+        """Update user."""
+        data = self._read_json(self.users_file, self.users_lock)
+        users = data.get("users", [])
+        
+        for i, user in enumerate(users):
+            if user["id"] == user_id:
+                # Update allowed fields
+                if "name" in updates:
+                    users[i]["name"] = updates["name"]
+                if "email" in updates:
+                    users[i]["email"] = updates["email"]
+                if "password" in updates:
+                    users[i]["password"] = generate_password_hash(updates["password"])
+                if "active" in updates:
+                    users[i]["active"] = updates["active"]
+                
+                users[i]["updated_at"] = datetime.now().isoformat()
+                data["users"] = users
+                return self._write_json(self.users_file, data, self.users_lock)
+        
+        return False
+    
+    def delete_user(self, user_id: int) -> bool:
+        """Delete user (soft delete - set active=False)."""
+        return self.update_user(user_id, {"active": False})
+    
+    # Attendance operations
+    def get_attendance_records(self, filters: Optional[Dict] = None) -> List[Dict]:
+        """Get attendance records with optional filters."""
+        data = self._read_json(self.attendance_file, self.attendance_lock)
+        records = data.get("records", [])
+        
+        if not filters:
+            return records
+        
+        # Apply filters
+        filtered = records
+        
+        if "date" in filters:
+            filtered = [r for r in filtered if r["date"] == filters["date"]]
+        
+        if "user_id" in filters:
+            filtered = [r for r in filtered if r["user_id"] == filters["user_id"]]
+        
+        if "name" in filters:
+            filtered = [r for r in filtered if r["name"] == filters["name"]]
+        
+        if "check_type" in filters:
+            filtered = [r for r in filtered if r["check_type"] == filters["check_type"]]
+        
+        if "start_date" in filters and "end_date" in filters:
+            filtered = [r for r in filtered 
+                       if filters["start_date"] <= r["date"] <= filters["end_date"]]
+        
+        return filtered
+    
+    def add_attendance_record(self, record: Dict) -> bool:
+        """Add attendance record."""
+        data = self._read_json(self.attendance_file, self.attendance_lock)
+        records = data.get("records", [])
+        
+        # Generate ID
+        record["id"] = max([r.get("id", 0) for r in records], default=0) + 1
+        record["created_at"] = datetime.now().isoformat()
+        
+        records.append(record)
+        data["records"] = records
+        
+        return self._write_json(self.attendance_file, data, self.attendance_lock)
+    
+    def get_statistics(self, date: Optional[str] = None) -> Dict:
+        """Get attendance statistics."""
+        if date is None:
+            date = datetime.now().strftime('%Y-%m-%d')
+        
+        records = self.get_attendance_records({"date": date})
+        
+        if not records:
+            return {
+                'date': date,
+                'total_records': 0,
+                'message': 'No attendance data for this date'
+            }
+        
+        unique_people = list(set(r["name"] for r in records))
+        check_ins = sum(1 for r in records if r["check_type"] == "IN")
+        check_outs = sum(1 for r in records if r["check_type"] == "OUT")
+        
+        confidences = [r["confidence"] for r in records]
+        qualities = [r["quality"] for r in records]
+        
+        times = [r["time"] for r in records]
+        
+        return {
+            'date': date,
+            'total_records': len(records),
+            'unique_people': len(unique_people),
+            'people': unique_people,
+            'check_ins': check_ins,
+            'check_outs': check_outs,
+            'avg_confidence': round(sum(confidences) / len(confidences), 2) if confidences else 0,
+            'avg_quality': round(sum(qualities) / len(qualities), 3) if qualities else 0,
+            'first_check_in': min(times) if times else None,
+            'last_check_out': max(times) if times else None
+        }
 
 # ============================================================================
 # ATTENDANCE RECORD CLASS
@@ -95,21 +367,13 @@ class AttendanceRecord:
             'is_live': self.is_live,
             'check_type': self.check_type
         }
-    
-    def __str__(self) -> str:
-        """Human-readable representation."""
-        return (f"{self.check_type}: {self.name} at {self.timestamp.strftime('%H:%M:%S')} "
-                f"(conf: {self.confidence:.1f}, quality: {self.quality:.2f})")
-
 
 # ============================================================================
 # ATTENDANCE MANAGER CLASS
 # ============================================================================
 
 class AttendanceManager:
-    """Core attendance management system."""
-    
-    MAX_RECORDS_IN_MEMORY = 1000
+    """Core attendance management system with JSON storage."""
     
     def __init__(
         self,
@@ -117,8 +381,7 @@ class AttendanceManager:
         data_dir: str = "attendance_data",
         security_level: str = "balanced",
         duplicate_threshold_minutes: int = 5,
-        enable_antispoofing: bool = True,
-        enable_reports: bool = True
+        enable_antispoofing: bool = True
     ):
         """Initialize attendance management system."""
         self.data_dir = Path(data_dir)
@@ -128,10 +391,9 @@ class AttendanceManager:
             (self.data_dir / subdir).mkdir(exist_ok=True)
         
         self.logger = logging.getLogger(__name__)
-        self.model_path = model_path
+        self.storage = JSONStorage(data_dir)
         self.security_level = security_level
         self.duplicate_threshold = timedelta(minutes=duplicate_threshold_minutes)
-        self._db_lock = Lock()
         
         self.logger.info("🚀 Initializing Attendance Management System")
         
@@ -158,7 +420,7 @@ class AttendanceManager:
             known_people = self.recognizer.get_known_people()
             self.logger.info(f"   ✅ Model loaded: {len(known_people)} people")
         else:
-            self.logger.warning(f"   ⚠️  No model found at: {model_path}")
+            self.logger.warning(f"   ⚠️ No model found at: {model_path}")
         
         # Anti-spoofing detector
         self.antispoofing = None
@@ -170,23 +432,7 @@ class AttendanceManager:
                 )
                 self.logger.info("   ✅ Anti-spoofing enabled")
             except Exception as e:
-                self.logger.warning(f"   ⚠️  Anti-spoofing initialization failed: {e}")
-        
-        # Report generator
-        self.report_generator = None
-        if enable_reports:
-            try:
-                self.report_generator = PerUserReportGenerator(
-                    db_path=str(self.data_dir / "user_reports.db"),
-                    reports_dir=str(self.data_dir / "reports")
-                )
-                self.logger.info("   ✅ Report generator enabled")
-            except Exception as e:
-                self.logger.warning(f"   ⚠️  Report generator initialization failed: {e}")
-        
-        # Initialize database
-        self.db_path = self.data_dir / "attendance.db"
-        self._init_database()
+                self.logger.warning(f"   ⚠️ Anti-spoofing initialization failed: {e}")
         
         # Session tracking
         self.attendance_records: List[AttendanceRecord] = []
@@ -207,78 +453,34 @@ class AttendanceManager:
         }
         return thresholds.get(level.lower(), 50.0)
     
-    def _init_database(self) -> None:
-        """Initialize SQLite database."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute("PRAGMA foreign_keys = ON")
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS attendance (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        name TEXT NOT NULL,
-                        timestamp TEXT NOT NULL,
-                        date TEXT NOT NULL,
-                        time TEXT NOT NULL,
-                        confidence REAL NOT NULL,
-                        quality REAL NOT NULL,
-                        is_live BOOLEAN NOT NULL,
-                        check_type TEXT NOT NULL CHECK(check_type IN ('IN', 'OUT')),
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_date ON attendance(date)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_name ON attendance(name)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON attendance(timestamp)")
-            
-            self.logger.info("   ✅ Database initialized")
-        except Exception as e:
-            self.logger.error(f"   ❌ Database initialization failed: {e}")
-            raise
-    
     def _load_today_records(self) -> None:
-        """Load today's attendance records from database."""
+        """Load today's attendance records from JSON storage."""
         today = datetime.now().strftime('%Y-%m-%d')
+        records = self.storage.get_attendance_records({"date": today})
         
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute("""
-                    SELECT user_id, name, timestamp, confidence, quality, is_live, check_type
-                    FROM attendance
-                    WHERE date = ?
-                    ORDER BY timestamp ASC
-                """, (today,))
-                
-                rows = cursor.fetchall()
-            
-            for row in rows:
-                timestamp = datetime.fromisoformat(row[2])
+        for record_dict in records:
+            try:
+                timestamp = datetime.fromisoformat(record_dict['timestamp'])
                 record = AttendanceRecord(
-                    user_id=row[0],
-                    name=row[1],
+                    user_id=record_dict['user_id'],
+                    name=record_dict['name'],
                     timestamp=timestamp,
-                    confidence=row[3],
-                    quality=row[4],
-                    is_live=bool(row[5]),
-                    check_type=row[6]
+                    confidence=record_dict['confidence'],
+                    quality=record_dict['quality'],
+                    is_live=record_dict['is_live'],
+                    check_type=record_dict['check_type']
                 )
                 self.attendance_records.append(record)
                 
-                if row[6] == "IN":
-                    self.last_check_in[row[1]] = timestamp
+                if record_dict['check_type'] == "IN":
+                    self.last_check_in[record_dict['name']] = timestamp
                 else:
-                    self.last_check_out[row[1]] = timestamp
-            
-            if self.attendance_records:
-                self.logger.info(f"   📋 Loaded {len(self.attendance_records)} records from today")
-        except Exception as e:
-            self.logger.warning(f"   ⚠️  Error loading records: {e}")
+                    self.last_check_out[record_dict['name']] = timestamp
+            except Exception as e:
+                self.logger.warning(f"Error loading record: {e}")
+        
+        if self.attendance_records:
+            self.logger.info(f"   📋 Loaded {len(self.attendance_records)} records from today")
     
     def process_frame(
         self,
@@ -390,7 +592,7 @@ class AttendanceManager:
         return time_since_last < self.duplicate_threshold
     
     def _record_attendance(self, result, check_type: str) -> AttendanceRecord:
-        """Record attendance to database and memory."""
+        """Record attendance to JSON storage and memory."""
         now = datetime.now()
         
         try:
@@ -413,8 +615,8 @@ class AttendanceManager:
             else:
                 self.last_check_out[result.name] = now
             
-            # Save to database
-            self._save_to_database(record)
+            # Save to JSON storage
+            self.storage.add_attendance_record(record.to_dict())
             
             # Backup to CSV
             self._save_to_csv(record)
@@ -426,41 +628,6 @@ class AttendanceManager:
         except Exception as e:
             self.logger.error(f"Recording error: {e}", exc_info=True)
             raise
-    
-    def _save_to_database(self, record: AttendanceRecord) -> None:
-        """Save record to SQLite database."""
-        with self._db_lock:
-            conn = None
-            try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                
-                cursor.execute("""
-                    INSERT INTO attendance (user_id, name, timestamp, date, time,
-                                           confidence, quality, is_live, check_type)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    record.user_id,
-                    record.name,
-                    record.timestamp.isoformat(),
-                    record.timestamp.strftime('%Y-%m-%d'),
-                    record.timestamp.strftime('%H:%M:%S'),
-                    record.confidence,
-                    record.quality,
-                    record.is_live,
-                    record.check_type
-                ))
-                
-                conn.commit()
-                
-            except Exception as e:
-                if conn:
-                    conn.rollback()
-                self.logger.error(f"Database save error: {e}")
-                raise
-            finally:
-                if conn:
-                    conn.close()
     
     def _save_to_csv(self, record: AttendanceRecord) -> None:
         """Save record to CSV backup file."""
@@ -482,212 +649,96 @@ class AttendanceManager:
                 writer.writerow(record.to_dict())
         except Exception as e:
             self.logger.warning(f"CSV save error: {e}")
-    
-    def get_statistics(self, date: Optional[str] = None) -> Dict[str, Any]:
-        """Get attendance statistics from database."""
-        if date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
-        
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute("SELECT COUNT(*) FROM attendance WHERE date = ?", (date,))
-                total_records = cursor.fetchone()[0]
-                
-                if total_records == 0:
-                    return {'date': date, 'total_records': 0, 'message': 'No attendance data for this date'}
-                
-                cursor.execute("SELECT DISTINCT name FROM attendance WHERE date = ?", (date,))
-                unique_people = [row[0] for row in cursor.fetchall()]
-                
-                cursor.execute("""
-                    SELECT check_type, COUNT(*) FROM attendance
-                    WHERE date = ? GROUP BY check_type
-                """, (date,))
-                check_counts = dict(cursor.fetchall())
-                
-                cursor.execute("SELECT AVG(confidence), AVG(quality) FROM attendance WHERE date = ?", (date,))
-                avg_conf, avg_qual = cursor.fetchone()
-                
-                cursor.execute("SELECT MIN(time), MAX(time) FROM attendance WHERE date = ?", (date,))
-                first_time, last_time = cursor.fetchone()
-            
-            return {
-                'date': date,
-                'total_records': total_records,
-                'unique_people': len(unique_people),
-                'people': unique_people,
-                'check_ins': check_counts.get('IN', 0),
-                'check_outs': check_counts.get('OUT', 0),
-                'avg_confidence': round(avg_conf, 2) if avg_conf else 0,
-                'avg_quality': round(avg_qual, 3) if avg_qual else 0,
-                'first_check_in': first_time,
-                'last_check_out': last_time
-            }
-        except Exception as e:
-            self.logger.error(f"Statistics error: {e}")
-            return {'date': date, 'error': str(e)}
-    
-    def get_date_range_records(self, start_date: str, end_date: str) -> List[Dict]:
-        """Get records for date range."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT user_id, name, timestamp, date, time, confidence, quality, is_live, check_type
-                    FROM attendance
-                    WHERE date BETWEEN ? AND ?
-                    ORDER BY timestamp DESC
-                """, (start_date, end_date))
-                
-                rows = cursor.fetchall()
-                return [
-                    {
-                        'user_id': r[0], 'name': r[1], 'timestamp': r[2],
-                        'date': r[3], 'time': r[4], 'confidence': r[5],
-                        'quality': r[6], 'is_live': r[7], 'check_type': r[8]
-                    }
-                    for r in rows
-                ]
-        except Exception as e:
-            self.logger.error(f"Date range query error: {e}")
-            return []
-    
-    def export_attendance(self, date: Optional[str] = None, format: str = "excel") -> str:
-        """Export attendance data."""
-        if date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
-        
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                cursor.execute("""
-                    SELECT user_id, name, timestamp, date, time,
-                           confidence, quality, is_live, check_type
-                    FROM attendance WHERE date = ? ORDER BY timestamp ASC
-                """, (date,))
-                
-                rows = cursor.fetchall()
-            
-            if not rows:
-                raise FileNotFoundError(f"No attendance data for {date}")
-            
-            records = []
-            for row in rows:
-                records.append({
-                    'user_id': row[0], 'name': row[1], 'timestamp': row[2],
-                    'date': row[3], 'time': row[4], 'confidence': row[5],
-                    'quality': row[6], 'is_live': row[7], 'check_type': row[8]
-                })
-            
-            export_path = self.data_dir / "exports"
-            
-            if format == "excel":
-                import pandas as pd
-                df = pd.DataFrame(records)
-                output_file = export_path / f"attendance_{date}.xlsx"
-                df.to_excel(output_file, index=False, engine='openpyxl')
-            elif format == "csv":
-                output_file = export_path / f"attendance_{date}.csv"
-                with open(output_file, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.DictWriter(f, fieldnames=records[0].keys())
-                    writer.writeheader()
-                    writer.writerows(records)
-            elif format == "json":
-                output_file = export_path / f"attendance_{date}.json"
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    json.dump(records, f, indent=2, ensure_ascii=False)
-            else:
-                raise ValueError(f"Unknown format: {format}")
-            
-            self.logger.info(f"📊 Exported {len(records)} records to: {output_file}")
-            return str(output_file)
-        except Exception as e:
-            self.logger.error(f"Export error: {e}")
-            raise
-    
-    def backup_database(self, backup_name: Optional[str] = None) -> str:
-        """Create a backup of the database."""
-        import shutil
-        
-        if backup_name is None:
-            backup_name = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-        
-        backup_path = self.data_dir / "backups" / backup_name
-        
-        try:
-            shutil.copy2(self.db_path, backup_path)
-            self.logger.info(f"💾 Database backed up to: {backup_path}")
-            return str(backup_path)
-        except Exception as e:
-            self.logger.error(f"Backup failed: {e}")
-            raise
-    
-    def get_user_report(self, name: str, days: int = 7) -> Dict[str, Any]:
-        """Get detailed report for a specific user."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-                
-                cursor.execute("""
-                    SELECT date, time, check_type, confidence, quality
-                    FROM attendance WHERE name = ? AND date >= ?
-                    ORDER BY timestamp DESC
-                """, (name, start_date))
-                
-                records = cursor.fetchall()
-            
-            if not records:
-                return {'name': name, 'records': 0, 'message': f'No records in last {days} days'}
-            
-            check_ins = sum(1 for r in records if r[2] == 'IN')
-            check_outs = sum(1 for r in records if r[2] == 'OUT')
-            avg_confidence = np.mean([r[3] for r in records])
-            avg_quality = np.mean([r[4] for r in records])
-            
-            dates = {}
-            for record in records:
-                date = record[0]
-                if date not in dates:
-                    dates[date] = {'IN': [], 'OUT': []}
-                dates[date][record[2]].append(record[1])
-            
-            return {
-                'name': name,
-                'period_days': days,
-                'total_records': len(records),
-                'check_ins': check_ins,
-                'check_outs': check_outs,
-                'avg_confidence': round(avg_confidence, 2),
-                'avg_quality': round(avg_quality, 3),
-                'daily_records': dates,
-                'recent_records': [
-                    {'date': r[0], 'time': r[1], 'type': r[2]} 
-                    for r in records[:10]
-                ]
-            }
-        except Exception as e:
-            self.logger.error(f"User report error: {e}")
-            return {'name': name, 'error': str(e)}
 
+# ============================================================================
+# AUTHENTICATION DECORATORS
+# ============================================================================
+
+def token_required(f):
+    """Decorator to require valid JWT token."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        # Get token from header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]  # Bearer <token>
+            except IndexError:
+                return jsonify({'error': 'Invalid token format'}), 401
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            # Decode token
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            current_user = storage.get_user_by_id(data['user_id'])
+            
+            if not current_user or not current_user.get('active', False):
+                return jsonify({'error': 'Invalid or inactive user'}), 401
+            
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
+
+def admin_required(f):
+    """Decorator to require admin role."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]
+            except IndexError:
+                return jsonify({'error': 'Invalid token format'}), 401
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            current_user = storage.get_user_by_id(data['user_id'])
+            
+            if not current_user or not current_user.get('active', False):
+                return jsonify({'error': 'Invalid or inactive user'}), 401
+            
+            if current_user.get('role') != 'admin':
+                return jsonify({'error': 'Admin access required'}), 403
+            
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
 
 # ============================================================================
 # FLASK APP INITIALIZATION
 # ============================================================================
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SECRET_KEY'] = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://localhost:3001"],
+        "origins": ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization", "Accept"],
+        "expose_headers": ["Content-Disposition", "Content-Type"],
+        "supports_credentials": True
     }
 })
 
@@ -708,13 +759,12 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 attendance_manager = None
+storage = None
 camera = None
 current_mode: str = "IN"
 camera_lock = Lock()
 system_lock = Lock()
 camera_active = False
-last_notification_time = 0
-notification_cooldown = 1.0
 
 # ============================================================================
 # INITIALIZATION
@@ -722,9 +772,13 @@ notification_cooldown = 1.0
 
 def init_system(model_path: str = "models/combined_model.yml", security_level: str = "balanced"):
     """Initialize the attendance system."""
-    global attendance_manager
+    global attendance_manager, storage
     
     with system_lock:
+        if storage is None:
+            storage = JSONStorage("attendance_data")
+            logger.info("✅ JSON storage initialized")
+        
         if attendance_manager is None:
             logger.info("🚀 Initializing Attendance System...")
             try:
@@ -732,8 +786,7 @@ def init_system(model_path: str = "models/combined_model.yml", security_level: s
                     model_path=model_path,
                     data_dir="attendance_data",
                     security_level=security_level,
-                    enable_antispoofing=True,
-                    enable_reports=True
+                    enable_antispoofing=True
                 )
                 logger.info("✅ System initialized successfully!")
             except Exception as e:
@@ -777,48 +830,138 @@ def release_camera():
             camera_active = False
             logger.info("📷 Camera released")
 
+# ============================================================================
+# AUTHENTICATION ROUTES
+# ============================================================================
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """User login endpoint."""
+    data = request.json or {}
+    
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+    
+    user = storage.get_user_by_username(username)
+    
+    if not user:
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    if not user.get('active', False):
+        return jsonify({'error': 'Account is inactive'}), 401
+    
+    if not check_password_hash(user['password'], password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Generate JWT token
+    token = jwt.encode({
+        'user_id': user['id'],
+        'username': user['username'],
+        'role': user['role'],
+        'exp': datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
+    }, SECRET_KEY, algorithm="HS256")
+    
+    logger.info(f"✅ User logged in: {username} ({user['role']})")
+    
+    return jsonify({
+        'success': True,
+        'token': token,
+        'user': {
+            'id': user['id'],
+            'username': user['username'],
+            'name': user['name'],
+            'role': user['role'],
+            'email': user['email']
+        }
+    })
+
+
+@app.route('/api/auth/register', methods=['POST'])
+@admin_required
+def register(current_user):
+    """Register new user (admin only)."""
+    data = request.json or {}
+    
+    required_fields = ['username', 'password', 'name']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Check if username exists
+    if storage.get_user_by_username(data['username']):
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    try:
+        new_user = storage.create_user({
+            'username': data['username'],
+            'password': data['password'],
+            'name': data['name'],
+            'email': data.get('email', ''),
+            'role': data.get('role', 'user')
+        })
+        
+        logger.info(f"✅ New user created: {data['username']} by {current_user['username']}")
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': new_user['id'],
+                'username': new_user['username'],
+                'name': new_user['name'],
+                'role': new_user['role'],
+                'email': new_user['email']
+            }
+        })
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/me', methods=['GET'])
+@token_required
+def get_current_user(current_user):
+    """Get current user info."""
+    return jsonify({
+        'user': {
+            'id': current_user['id'],
+            'username': current_user['username'],
+            'name': current_user['name'],
+            'role': current_user['role'],
+            'email': current_user['email']
+        }
+    })
+
+
+@app.route('/api/auth/change-password', methods=['POST'])
+@token_required
+def change_password(current_user):
+    """Change user password."""
+    data = request.json or {}
+    
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    
+    if not old_password or not new_password:
+        return jsonify({'error': 'Old and new passwords required'}), 400
+    
+    if not check_password_hash(current_user['password'], old_password):
+        return jsonify({'error': 'Invalid old password'}), 401
+    
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    
+    try:
+        storage.update_user(current_user['id'], {'password': new_password})
+        logger.info(f"✅ Password changed for user: {current_user['username']}")
+        return jsonify({'success': True, 'message': 'Password changed successfully'})
+    except Exception as e:
+        logger.error(f"Password change error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================================
-# WEBSOCKET HELPERS
-# ============================================================================
-
-def emit_notification(notification_type: str, title: str, message: str, data: Optional[Dict] = None):
-    """Emit real-time notification to all connected clients."""
-    global last_notification_time
-    
-    current_time = time.time()
-    if current_time - last_notification_time < notification_cooldown:
-        return
-    
-    last_notification_time = current_time
-    
-    notification = {
-        'type': notification_type,
-        'title': title,
-        'message': message,
-        'timestamp': datetime.now().isoformat(),
-        'data': data or {}
-    }
-    
-    socketio.emit('notification', notification)
-    logger.info(f"📢 Notification: {title}")
-
-
-def emit_stats_update():
-    """Emit statistics update to all clients."""
-    if attendance_manager:
-        stats = get_quick_stats()
-        socketio.emit('stats_update', stats)
-
-
-def emit_record_update(record):
-    """Emit new record to all clients."""
-    socketio.emit('new_record', record.to_dict())
-    emit_stats_update()
-
-
-# ============================================================================
-# VIDEO STREAMING
+# VIDEO STREAMING (Token Required)
 # ============================================================================
 
 def generate_frames():
@@ -833,7 +976,6 @@ def generate_frames():
         init_camera()
     
     frame_count = 0
-    last_stats_update = time.time()
     
     while camera_active:
         with camera_lock:
@@ -853,26 +995,8 @@ def generate_frames():
             annotated, record = attendance_manager.process_frame(frame, current_mode)
             
             if record is not None:
-                emit_record_update(record)
-                
-                if record.is_live:
-                    emit_notification(
-                        'success',
-                        f'✓ {record.name} Checked {record.check_type}',
-                        f'Time: {record.timestamp.strftime("%H:%M:%S")} | Confidence: {record.confidence:.1f}',
-                        record.to_dict()
-                    )
-                else:
-                    emit_notification(
-                        'error',
-                        '⚠️ Spoofing Detected!',
-                        f'Attempted check by {record.name} was BLOCKED',
-                        record.to_dict()
-                    )
-            
-            if time.time() - last_stats_update > 5:
-                emit_stats_update()
-                last_stats_update = time.time()
+                socketio.emit('new_record', record.to_dict())
+                socketio.emit('stats_update', get_quick_stats())
             
             h, w = annotated.shape[:2]
             
@@ -882,9 +1006,6 @@ def generate_frames():
                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
             cv2.putText(annotated, f"Records: {len(attendance_manager.attendance_records)}",
                        (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-            
-            cv2.putText(annotated, f"Frame: {frame_count}",
-                       (w - 150, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             
             ret, buffer = cv2.imencode('.jpg', annotated, [cv2.IMWRITE_JPEG_QUALITY, 85])
             if not ret:
@@ -918,14 +1039,13 @@ def get_quick_stats() -> Dict[str, Any]:
         'current_mode': current_mode
     }
 
-
 # ============================================================================
 # API ROUTES
 # ============================================================================
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint (no auth required)."""
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
@@ -935,32 +1055,10 @@ def health_check():
     })
 
 
-@app.route('/api/system/info', methods=['GET'])
-def system_info():
-    """Get system information."""
-    if not attendance_manager:
-        return jsonify({'error': 'System not initialized'}), 503
-    
-    try:
-        model_info = attendance_manager.recognizer.get_model_info()
-        
-        return jsonify({
-            'security_level': attendance_manager.security_level,
-            'antispoofing_enabled': attendance_manager.antispoofing is not None,
-            'reports_enabled': attendance_manager.report_generator is not None,
-            'model_info': model_info,
-            'current_mode': current_mode,
-            'camera_active': camera_active,
-            'version': '1.0.0'
-        })
-    except Exception as e:
-        logger.error(f"Error getting system info: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
 @app.route('/api/video/feed')
-def video_feed():
-    """Video streaming endpoint."""
+@token_required
+def video_feed(current_user):
+    """Video streaming endpoint (requires authentication)."""
     if not attendance_manager:
         return jsonify({'error': 'System not initialized'}), 503
     
@@ -971,14 +1069,16 @@ def video_feed():
 
 
 @app.route('/api/mode', methods=['GET'])
-def get_mode():
-    """Get current mode."""
+@token_required
+def get_mode(current_user):
+    """Get current mode (users can view)."""
     return jsonify({'mode': current_mode})
 
 
 @app.route('/api/mode', methods=['POST'])
-def set_mode():
-    """Set attendance mode."""
+@token_required
+def set_mode(current_user):
+    """Set attendance mode (users can change for their own check-in/out)."""
     global current_mode
     
     data = request.json or {}
@@ -990,20 +1090,21 @@ def set_mode():
     current_mode = new_mode
     socketio.emit('mode_changed', {'mode': current_mode})
     
-    logger.info(f"Mode changed to: {current_mode}")
+    logger.info(f"Mode changed to: {current_mode} by {current_user['username']}")
     return jsonify({'success': True, 'mode': current_mode})
 
 
 @app.route('/api/statistics', methods=['GET'])
-def get_statistics():
-    """Get attendance statistics."""
-    if not attendance_manager:
+@admin_required
+def get_statistics(current_user):
+    """Get attendance statistics (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
     date = request.args.get('date')
     
     try:
-        stats = attendance_manager.get_statistics(date)
+        stats = storage.get_statistics(date)
         return jsonify(stats)
     except Exception as e:
         logger.error(f"Statistics error: {e}")
@@ -1011,8 +1112,9 @@ def get_statistics():
 
 
 @app.route('/api/statistics/quick', methods=['GET'])
-def quick_statistics():
-    """Get quick statistics."""
+@token_required
+def quick_statistics(current_user):
+    """Get quick statistics (authenticated users can view)."""
     if not attendance_manager:
         return jsonify({'error': 'System not initialized'}), 503
     
@@ -1020,32 +1122,53 @@ def quick_statistics():
 
 
 @app.route('/api/records/today', methods=['GET'])
-def get_today_records():
-    """Get today's records."""
-    if not attendance_manager:
+@admin_required
+def get_today_records(current_user):
+    """Get today's records (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
-    records = [r.to_dict() for r in attendance_manager.attendance_records]
-    return jsonify({'records': records, 'count': len(records)})
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+        records = storage.get_attendance_records({'date': today})
+        return jsonify({'records': records, 'count': len(records)})
+    except Exception as e:
+        logger.error(f"Error fetching records: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/records/latest', methods=['GET'])
-def get_latest_records():
-    """Get latest N records."""
-    if not attendance_manager:
+@app.route('/api/records/my', methods=['GET'])
+@token_required
+def get_my_records(current_user):
+    """Get current user's records."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
-    n = int(request.args.get('n', 10))
-    records = [r.to_dict() for r in attendance_manager.attendance_records[-n:]]
-    records.reverse()
-    
-    return jsonify({'records': records, 'count': len(records)})
+    try:
+        # Get records for current user
+        days = int(request.args.get('days', 7))
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        all_records = storage.get_attendance_records({
+            'start_date': start_date,
+            'end_date': end_date
+        })
+        
+        # Filter by user name (you might want to match by user_id if you have it)
+        my_records = [r for r in all_records if r['name'] == current_user['name']]
+        
+        return jsonify({'records': my_records, 'count': len(my_records)})
+    except Exception as e:
+        logger.error(f"Error fetching user records: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/records/range', methods=['GET'])
-def get_date_range_records():
-    """Get records for date range."""
-    if not attendance_manager:
+@admin_required
+def get_date_range_records(current_user):
+    """Get records for date range (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
     start_date = request.args.get('start_date')
@@ -1055,7 +1178,10 @@ def get_date_range_records():
         return jsonify({'error': 'start_date and end_date required'}), 400
     
     try:
-        records = attendance_manager.get_date_range_records(start_date, end_date)
+        records = storage.get_attendance_records({
+            'start_date': start_date,
+            'end_date': end_date
+        })
         return jsonify({'records': records, 'count': len(records)})
     except Exception as e:
         logger.error(f"Date range query error: {e}")
@@ -1063,74 +1189,155 @@ def get_date_range_records():
 
 
 @app.route('/api/users', methods=['GET'])
-def get_users():
-    """Get all registered users."""
-    if not attendance_manager:
+@admin_required
+def get_users(current_user):
+    """Get all users (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
     try:
-        people = attendance_manager.recognizer.get_known_people()
-        return jsonify({'users': people, 'count': len(people)})
+        users = storage.get_users()
+        # Remove password hashes from response
+        safe_users = [{k: v for k, v in u.items() if k != 'password'} for u in users]
+        return jsonify({'users': safe_users, 'count': len(safe_users)})
     except Exception as e:
         logger.error(f"Users query error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/users/<name>/report', methods=['GET'])
-def get_user_report(name: str):
-    """Get user report."""
-    if not attendance_manager:
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@admin_required
+def update_user(current_user, user_id):
+    """Update user (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
-    days = int(request.args.get('days', 7))
+    data = request.json or {}
     
     try:
-        report = attendance_manager.get_user_report(name, days)
-        return jsonify(report)
+        success = storage.update_user(user_id, data)
+        if success:
+            return jsonify({'success': True, 'message': 'User updated'})
+        else:
+            return jsonify({'error': 'User not found'}), 404
     except Exception as e:
-        logger.error(f"User report error: {e}")
+        logger.error(f"User update error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def delete_user(current_user, user_id):
+    """Delete user (admin only)."""
+    if not storage:
+        return jsonify({'error': 'System not initialized'}), 503
+    
+    if user_id == current_user['id']:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    try:
+        success = storage.delete_user(user_id)
+        if success:
+            return jsonify({'success': True, 'message': 'User deleted'})
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        logger.error(f"User deletion error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/export', methods=['GET'])
-def export_data():
-    """Export attendance data."""
-    if not attendance_manager:
+@admin_required
+def export_data(current_user):
+    """Export attendance data (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
     date = request.args.get('date')
-    format_type = request.args.get('format', 'excel')
+    format_type = request.args.get('format', 'csv')
     
-    if format_type not in ['excel', 'csv', 'json']:
-        return jsonify({'error': 'Invalid format'}), 400
+    if format_type not in ['csv', 'json']:
+        return jsonify({'error': 'Invalid format. Use: csv or json'}), 400
     
     try:
-        file_path = attendance_manager.export_attendance(date, format_type)
-        return send_file(file_path, as_attachment=True)
-    except FileNotFoundError as e:
-        return jsonify({'error': str(e)}), 404
+        if date:
+            records = storage.get_attendance_records({'date': date})
+        else:
+            date = datetime.now().strftime('%Y-%m-%d')
+            records = storage.get_attendance_records({'date': date})
+        
+        if not records:
+            return jsonify({'error': f'No attendance data for {date}'}), 404
+        
+        export_dir = Path("attendance_data/exports")
+        export_dir.mkdir(exist_ok=True)
+        
+        if format_type == 'csv':
+            output_file = export_dir / f"attendance_{date}.csv"
+            with open(output_file, 'w', newline='', encoding='utf-8') as f:
+                if records:
+                    writer = csv.DictWriter(f, fieldnames=records[0].keys())
+                    writer.writeheader()
+                    writer.writerows(records)
+            
+            mime_type = 'text/csv'
+            
+        else:  # json
+            output_file = export_dir / f"attendance_{date}.json"
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(records, f, indent=2, ensure_ascii=False)
+            
+            mime_type = 'application/json'
+        
+        logger.info(f"📊 Exported {len(records)} records to: {output_file}")
+        
+        return send_file(
+            output_file,
+            mimetype=mime_type,
+            as_attachment=True,
+            download_name=output_file.name
+        )
+        
     except Exception as e:
-        logger.error(f"Export error: {e}")
+        logger.error(f"Export error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/backup', methods=['POST'])
-def create_backup():
-    """Create database backup."""
-    if not attendance_manager:
+@admin_required
+def create_backup(current_user):
+    """Create backup of all JSON files (admin only)."""
+    if not storage:
         return jsonify({'error': 'System not initialized'}), 503
     
     try:
-        backup_path = attendance_manager.backup_database()
+        backup_dir = Path("attendance_data/backups")
+        backup_dir.mkdir(exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_name = f"backup_{timestamp}"
+        backup_path = backup_dir / backup_name
+        backup_path.mkdir(exist_ok=True)
+        
+        # Copy all JSON files
+        data_dir = Path("attendance_data")
+        for json_file in ['users.json', 'attendance.json', 'settings.json']:
+            src = data_dir / json_file
+            if src.exists():
+                shutil.copy2(src, backup_path / json_file)
+        
+        logger.info(f"💾 Backup created: {backup_path}")
+        
         return jsonify({
             'success': True,
-            'path': backup_path,
-            'message': 'Backup created successfully'
+            'path': str(backup_path),
+            'message': f'Backup created successfully',
+            'timestamp': datetime.now().isoformat()
         })
+        
     except Exception as e:
-        logger.error(f"Backup error: {e}")
+        logger.error(f"Backup error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
 
 # ============================================================================
 # WEBSOCKET EVENTS
@@ -1152,23 +1359,6 @@ def handle_disconnect():
     logger.info(f"🔌 Client disconnected")
 
 
-@socketio.on('request_stats')
-def handle_stats_request():
-    """Handle stats request."""
-    if attendance_manager:
-        emit('stats_update', get_quick_stats())
-
-
-@socketio.on('request_records')
-def handle_records_request(data):
-    """Handle records request."""
-    if attendance_manager:
-        n = data.get('count', 10)
-        records = [r.to_dict() for r in attendance_manager.attendance_records[-n:]]
-        records.reverse()
-        emit('records_update', {'records': records})
-
-
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================
@@ -1185,7 +1375,6 @@ def internal_error(error):
     logger.error(f"Internal error: {error}")
     return jsonify({'error': 'Internal server error'}), 500
 
-
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -1194,7 +1383,7 @@ def main():
     """Main entry point."""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Attendance System Flask Backend')
+    parser = argparse.ArgumentParser(description='Attendance System Flask Backend with Auth')
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind')
     parser.add_argument('--port', type=int, default=5000, help='Port to bind')
     parser.add_argument('--debug', action='store_true', help='Debug mode')
@@ -1204,10 +1393,15 @@ def main():
     args = parser.parse_args()
     
     print("\n" + "="*70)
-    print("🚀 ATTENDANCE SYSTEM - FLASK BACKEND API")
+    print("🚀 ATTENDANCE SYSTEM - FLASK BACKEND API WITH AUTHENTICATION")
     print("="*70)
     print(f"   URL: http://{args.host}:{args.port}")
     print(f"   Security: {args.security.upper()}")
+    print(f"   Storage: JSON Files")
+    print("="*70)
+    print("\n   Default Credentials:")
+    print("   Admin - username: admin, password: admin123")
+    print("   User  - username: user,  password: user123")
     print("="*70 + "\n")
     
     try:
